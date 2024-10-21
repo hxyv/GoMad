@@ -1,9 +1,10 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func main() {
-	fmt.Println("Hello")
+	protien, _ := readProteinFromFile("../data/calmodulin_noCA.pdb")
+
+	fmt.Println(protien.Residue[0])
+	fmt.Println(protien.Residue[0].Atoms[0])
 }
