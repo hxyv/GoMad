@@ -1,5 +1,11 @@
 package main
 
+type TriTuple struct {
+	x float64
+	y float64
+	z float64
+}
+
 type Protein struct {
 	Name    string
 	Residue []*Residue
@@ -13,16 +19,12 @@ type Residue struct {
 }
 
 type Atom struct {
-	Position    triArray
-	Velocity    triArray
-	Force       triArray
-	Accelerated triArray
-	Mass        float64
-	Element     string
-}
-
-type triArray struct {
-	X, Y, Z float64
+	position    TriTuple
+	velocity    TriTuple
+	force       TriTuple
+	accelerated TriTuple
+	mass        float64
+	element     string
 }
 
 //ATOM      1       N        MET          A       1              26.457  24.555  27.324  1.00 20.00           N
