@@ -31,10 +31,10 @@ func parsePDBLine(line string) (Atom, string, error) {
 	element := fields[2]
 
 	// pass value to atom object
-	atom.Position.X = x
-	atom.Position.Y = y
-	atom.Position.Z = z
-	atom.Element = element
+	atom.position.x = x
+	atom.position.y = y
+	atom.position.z = z
+	atom.element = element
 
 	// Extract residue name
 	residueName := fields[3]
