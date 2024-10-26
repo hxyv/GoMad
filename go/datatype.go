@@ -19,13 +19,14 @@ type Residue struct {
 }
 
 type Atom struct {
-	position    TriTuple
-	velocity    TriTuple
-	force       TriTuple
-	accelerated TriTuple
-	mass        float64
-	element     string
+	Position    triArray
+	Velocity    triArray
+	Force       triArray
+	Accelerated triArray
+	Mass        float64
+	Element     string
 }
 
 //ATOM      1       N        MET          A       1              26.457  24.555  27.324  1.00 20.00           N
 //Atom   number atomName ResidueName  chainName Residueposition    X       Y       Z                       element number
+
