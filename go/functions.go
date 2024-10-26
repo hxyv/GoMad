@@ -2,8 +2,6 @@ package main
 
 import (
 	"math"
-
-	"golang.org/x/image/vector"
 )
 
 func CalculateBondStretchEnergy(k, r, r_0 float64) float64 {
@@ -61,8 +59,7 @@ func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
 
 	plane1 := BuildNormalVector(vector1, vector2)
 	plane2 := BuildNormalVector(vector2, vector3)
-    plane3 := BuildNormalVector(plane1, plane2)
-
+	plane3 := BuildNormalVector(plane1, plane2)
 
 	x := plane1.dot(plane2)
 	y := plane3.dot(vector2) / magnitude(vector2)
@@ -71,8 +68,8 @@ func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
 	return angle * (180 / math.Pi)
 }
 
-func BuildNormalVector(vector1, vector2 TriTuple){
-    var normVector TriTuple
+func BuildNormalVector(vector1, vector2 TriTuple) TriTuple {
+	var normVector TriTuple
 	normVector.x = vector1.y*vector2.z - vector1.z*vector2.y
 	normVector.y = vector1.z*vector2.x - vector1.x*vector2.z
 	normVector.z = vector1.x*vector2.y - vector1.y*vector2.x
@@ -80,10 +77,10 @@ func BuildNormalVector(vector1, vector2 TriTuple){
 	return normVector
 }
 
-func (vector1 TriTuple)dot(vector2 TriTuple) TriTuple{
-    return vector1.x*vector2.x + vector1.y*vector2.y + vector1.z*vector2.z\
+func (vector1 TriTuple) dot(vector2 TriTuple) float64 {
+	return vector1.x*vector2.x + vector1.y*vector2.y + vector1.z*vector2.z
 }
 
 func magnitude(vector TriTuple) float64 {
-    return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
+	return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
 }
