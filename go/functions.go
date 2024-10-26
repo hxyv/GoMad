@@ -12,8 +12,8 @@ func CalculateAnglePotentialEnergy(k, theta, theta_0 float64) float64 {
 	return 0.5 * k * (theta - theta_0) * (theta - theta_0)
 }
 
-func CalculateDihedralAngleEnergy(k, mu, mu_0 float64) float64 {
-	return 0.5 * k * (mu - mu_0) * (mu - mu_0)
+func CalculateProperDihedralAngleEnergy(kd, phi, pn, phase float64) float64 {
+	return kd * (1 + math.Cos(pn*phi-phase))
 }
 
 func CalculateAngle(atom1, atom2, atom3 *Atom) float64 {
@@ -83,4 +83,92 @@ func (vector1 TriTuple) dot(vector2 TriTuple) float64 {
 
 func magnitude(vector TriTuple) float64 {
 	return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
+}
+
+func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
+	return 0.5 * k * (r - r_0) * (r - r_0)
+}
+
+func PerformEnergyMinimization(currentProtein *Protein) *Protein {
+
+	iteration := 100
+	// set maximum displacement
+	h := 0.01
+
+	for i := 0; i < iteration; i++ {
+		// calculate total Energy of original protein
+		initialEnergy := CalculateTotalEnergy(currentProtein)
+
+		tempProtein := CopyProtein(currentProtein)
+
+		// perform SteepestDescent, update positions in protein
+		SteepestDescent(tempProtein, h)
+
+		// calculate total Energy of updated protein
+		updatedEnergy := CalculateTotalEnergy(tempProtein)
+
+		// if Total energy decrease, accept the changes of positions and increase maximum displacement h
+		// Otherwise, reject the changes in positions and decrease maximum displacement h
+		if updatedEnergy < initialEnergy {
+			currentProtein = tempProtein
+			h *= 1.2
+		} else {
+			h *= 0.2 * h
+		}
+
+	}
+
+	return currentProtein
+
+}
+
+func CalculateTotalEnergy()
+
+func SteepestDescent()
+
+func CopyProtein(currentProtein *Protein) *Protein {
+	var newProtein Protein
+	newProtein.Name = currentProtein.Name
+
+	newProtein.Residue = make([]*Residue, len(currentProtein.Residue))
+	for i := range currentProtein.Residue {
+		newProtein.Residue[i] = CopyResidue(currentProtein.Residue[i])
+	}
+
+	return &newProtein
+}
+
+func CopyResidue(currRes *Residue) *Residue {
+	var newRes Residue
+	newRes.Name = currRes.Name
+	newRes.ID = currRes.ID
+	newRes.ChainID = currRes.ChainID
+
+	newRes.Atoms = make([]*Atom, len(currRes.Atoms))
+	for i := range currRes.Atoms {
+		newRes.Atoms[i] = CopyAtom(currRes.Atoms[i])
+	}
+
+	return &newRes
+}
+
+func CopyAtom(currAtom *Atom) *Atom {
+	var newAtom Atom
+	newAtom.mass = currAtom.mass
+	newAtom.force = CopyTriTuple(currAtom.force)
+	newAtom.position = CopyTriTuple(currAtom.position)
+	newAtom.velocity = CopyTriTuple(currAtom.velocity)
+	newAtom.accelerated = CopyTriTuple(currAtom.accelerated)
+	newAtom.element = currAtom.element
+
+	return &newAtom
+}
+
+func CopyTriTuple(tri TriTuple) TriTuple {
+	var newTri TriTuple
+	newTri.x = tri.x
+	newTri.y = tri.y
+	newTri.z = tri.z
+
+	return newTri
 }
