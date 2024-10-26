@@ -84,3 +84,6 @@ func (vector1 TriTuple) dot(vector2 TriTuple) float64 {
 func magnitude(vector TriTuple) float64 {
 	return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
 }
+
+
+
