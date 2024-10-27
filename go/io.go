@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+// /////////////////
+// ////////////////
+// ///////////////
+// ////These function are used for read protein from PDB
+
 // Function to parse a PDB line based on spaces
 func parsePDBLine(line string) (Atom, string, error) {
 	fields := strings.Fields(line)
@@ -96,4 +101,117 @@ func readProteinFromFile(fileName string) (Protein, error) {
 	protein.Residue = residues
 
 	return protein, nil
+}
+
+// /////////////////
+// ////////////////
+// ///////////////
+// ////These function are used for read parameter for MDsimulation
+
+// Function to parse a single line and return a parameterPair struct
+func ParseParameterPairLine(line string, funcPosition, length int) (parameterPair, error) {
+	// Remove any leading/trailing whitespace
+	line = strings.TrimSpace(line)
+
+	// Skip empty lines or lines that start with a comment
+	if line == "" || strings.HasPrefix(line, ";") {
+		return parameterPair{}, fmt.Errorf("empty or comment line")
+	}
+
+	// check the number of line
+	fields := strings.Fields(line)
+	// Initialize parameterPair struct and parse atom names
+	atomName := fields[:funcPosition-1]
+	parameter := make([]float64, length-funcPosition-1)
+
+	var pair parameterPair
+	pair.atomName = atomName
+	pair.parameter = parameter
+
+	// Parse function
+	function, err := strconv.Atoi(fields[funcPosition-1])
+	if err != nil {
+		return parameterPair{}, err
+	}
+	pair.Function = function
+
+	// Parse parameters
+	for i := 0; i < len(pair.parameter); i++ {
+		param, err := strconv.ParseFloat(fields[funcPosition+i], 64)
+		if err != nil {
+			return parameterPair{}, err
+		}
+		pair.parameter[i] = param
+	}
+
+	return pair, nil
+}
+
+// Function to read the entire file and parse each line into a slice of parameterPair structs
+func ReadParameterFile(filePath string) (parameterDatabase, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return parameterDatabase{}, err
+	}
+	defer file.Close()
+
+	var pairs parameterDatabase
+	Firstline, _ := GetFirstLine(filePath)
+	funcPosition, len, _ := FindPosition(Firstline)
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		pair, err := ParseParameterPairLine(line, funcPosition, len)
+		if err != nil {
+			continue
+		}
+		pairPointer := &pair
+		pairs.atomPair = append(pairs.atomPair, pairPointer)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return parameterDatabase{}, err
+	}
+
+	return pairs, nil
+}
+
+// Function to read the entire file and parse each line into a slice of parameterPair structs
+func FindPosition(line string) (int, int, error) {
+	// Check if the line starts with ";"
+	if !strings.HasPrefix(line, ";") {
+		return -1, 0, fmt.Errorf("line does not start with a comment: %s", line)
+	}
+
+	// Split the line into fields
+	fields := strings.Fields(line)
+	len := len(fields)
+
+	// Look for "func" in the fields
+	for i, field := range fields {
+		if field == "func" {
+			// Return the index of "func"
+			return i, len, nil
+		}
+	}
+
+	return -1, 0, fmt.Errorf("'func' not found in the line")
+}
+
+func GetFirstLine(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	// Read and return the first line
+	if scanner.Scan() {
+		return scanner.Text(), nil
+	}
+
+	return "", fmt.Errorf("file does not have any lines")
 }

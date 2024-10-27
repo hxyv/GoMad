@@ -1,10 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
-	protien, _ := readProteinFromFile("../data/calmodulin_noCA.pdb")
+	secline, _ := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	fmt.Println(secline.atomPair)
 
-	fmt.Println(protien.Residue[0])
-	fmt.Println(protien.Residue[0].Atoms[0])
 }

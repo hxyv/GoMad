@@ -27,5 +27,15 @@ type Atom struct {
 	element     string
 }
 
+type parameterPair struct {
+	atomName  []string
+	Function  int
+	parameter []float64
+}
+
+type parameterDatabase struct {
+	atomPair []*parameterPair
+}
+
 //ATOM      1       N        MET          A       1              26.457  24.555  27.324  1.00 20.00           N
 //Atom   number atomName ResidueName  chainName Residueposition    X       Y       Z                       element number
