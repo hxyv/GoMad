@@ -17,15 +17,8 @@ func CalculateProperDihedralAngleEnergy(kd, phi, pn, phase float64) float64 {
 }
 
 func CalculateAngle(atom1, atom2, atom3 *Atom) float64 {
-	var vector1 TriTuple
-	var vector2 TriTuple
-	vector1.x = atom2.position.x - atom1.position.x
-	vector1.y = atom2.position.y - atom1.position.y
-	vector1.z = atom2.position.z - atom1.position.z
-
-	vector2.x = atom3.position.x - atom1.position.x
-	vector2.y = atom3.position.y - atom1.position.y
-	vector2.z = atom3.position.z - atom1.position.z
+	vector1 := CalculateVector(atom2, atom1)
+	vector2 := CalculateVector(atom3, atom1)
 
 	upperValue := vector1.dot(vector2)
 	lowerValue := Distance(atom1.position, atom2.position) * Distance(atom2.position, atom3.position)
@@ -44,18 +37,9 @@ func Distance(p1, p2 TriTuple) float64 {
 }
 
 func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
-	var vector1 TriTuple
-	var vector2 TriTuple
-	var vector3 TriTuple
-
-	vector1.x = atom2.position.x - atom1.position.x
-	vector1.y = atom2.position.y - atom1.position.y
-
-	vector2.x = atom3.position.x - atom2.position.x
-	vector2.y = atom3.position.y - atom2.position.y
-
-	vector3.x = atom4.position.x - atom4.position.x
-	vector3.y = atom4.position.y - atom4.position.y
+	vector1 := CalculateVector(atom2, atom1)
+	vector2 := CalculateVector(atom3, atom2)
+	vector3 := CalculateVector(atom4, atom3)
 
 	plane1 := BuildNormalVector(vector1, vector2)
 	plane2 := BuildNormalVector(vector2, vector3)
@@ -122,9 +106,45 @@ func PerformEnergyMinimization(currentProtein *Protein) *Protein {
 
 }
 
-func CalculateTotalEnergy()
+func CalculateTotalEnergy(k, r, r_0 float64)
 
-func SteepestDescent()
+func SteepestDescent(protein *Protein, h float64) *Protein {
+	for i := range protein.Residue {
+		for j := range protein.Residue[i].Atoms {
+			force := CalculateNetForce() // need to be revised
+			magn := magnitude(force)
+			protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
+			protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
+			protein.Residue[i].Atoms[j].position.z = protein.Residue[i].Atoms[j].position.z + (force.z*h)/magn
+
+		}
+	}
+
+	return protein
+
+}
+
+func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
+	bondLen := Distance(atom1.position, atom2.position)
+	unitVector := TriTuple{
+		x: (atom2.position.x - atom1.position.x) / bondLen,
+		y: (atom2.position.y - atom1.position.y) / bondLen,
+		z: (atom2.position.z - atom1.position.z) / bondLen,
+	}
+
+	fScale := -k * (r - r_0)
+	force := TriTuple{
+		x: fScale * unitVector.x,
+		y: fScale * unitVector.y,
+		z: fScale * unitVector.z,
+	}
+	return force
+
+}
+
+func CalculateNetForce() {
+
+}
 
 func CopyProtein(currentProtein *Protein) *Protein {
 	var newProtein Protein
@@ -171,4 +191,13 @@ func CopyTriTuple(tri TriTuple) TriTuple {
 	newTri.z = tri.z
 
 	return newTri
+}
+
+func CalculateVector(atom1, atom2 *Atom) TriTuple {
+	var vector TriTuple
+	vector.x = atom2.position.x - atom1.position.x
+	vector.y = atom2.position.y - atom1.position.y
+	vector.z = atom2.position.z - atom1.position.z
+
+	return vector
 }
