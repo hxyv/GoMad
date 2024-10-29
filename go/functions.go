@@ -142,6 +142,53 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 
 }
 
+func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (TriTuple, TriTuple, TriTuple) {
+	der_U_thate := k * (theta - theta_0)
+	der_that_cos := (-1) * (1 / math.Sin(theta))
+
+	der_theta_x_12 := DerivateAnglePositionX(atom1, atom2, atom3, theta)
+	der_theta_x_32 := DerivateAnglePositionX(atom3, atom2, atom2, theta)
+
+	der_theta_y_12 := DerivateAnglePositionY(atom1, atom2, atom3, theta)
+	der_theta_y_32 := DerivateAnglePositionY(atom3, atom2, atom2, theta)
+
+	der_theta_z_12 := DerivateAnglePositionZ(atom1, atom2, atom3, theta)
+	der_theta_z_32 := DerivateAnglePositionZ(atom3, atom2, atom2, theta)
+
+	force_i := TriTuple{
+		x: der_U_thate * der_that_cos * der_theta_x_12,
+		y: der_U_thate * der_that_cos * der_theta_y_12,
+		z: der_U_thate * der_that_cos * der_theta_z_12,
+	}
+
+	force_k := TriTuple{
+		x: der_U_thate * der_that_cos * der_theta_x_32,
+		y: der_U_thate * der_that_cos * der_theta_y_32,
+		z: der_U_thate * der_that_cos * der_theta_z_32,
+	}
+
+	force_j := TriTuple{
+		x: -force_i.x - force_k.x,
+		y: -force_i.y - force_k.y,
+		z: -force_i.z - force_k.z,
+	}
+
+	return force_i, force_j, force_k
+
+}
+
+func DerivateAnglePositionX(atom1, atom2, atom3 *Atom, theta float64) float64 {
+	return 1 / Distance(atom1.position, atom2.position) * ((atom3.position.x-atom2.position.x)/Distance(atom3.position, atom2.position) - (atom1.position.x-atom2.position.x)/Distance(atom1.position, atom2.position)*math.Cos(theta))
+}
+
+func DerivateAnglePositionY(atom1, atom2, atom3 *Atom, theta float64) float64 {
+	return 1 / Distance(atom1.position, atom2.position) * ((atom3.position.y-atom2.position.y)/Distance(atom3.position, atom2.position) - (atom1.position.y-atom2.position.y)/Distance(atom1.position, atom2.position)*math.Cos(theta))
+}
+
+func DerivateAnglePositionZ(atom1, atom2, atom3 *Atom, theta float64) float64 {
+	return 1 / Distance(atom1.position, atom2.position) * ((atom3.position.z-atom2.position.z)/Distance(atom3.position, atom2.position) - (atom1.position.z-atom2.position.z)/Distance(atom1.position, atom2.position)*math.Cos(theta))
+}
+
 func CalculateNetForce() {
 
 }
