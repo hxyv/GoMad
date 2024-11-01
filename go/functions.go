@@ -189,6 +189,61 @@ func DerivateAnglePositionZ(atom1, atom2, atom3 *Atom, theta float64) float64 {
 	return 1 / Distance(atom1.position, atom2.position) * ((atom3.position.z-atom2.position.z)/Distance(atom3.position, atom2.position) - (atom1.position.z-atom2.position.z)/Distance(atom1.position, atom2.position)*math.Cos(theta))
 }
 
+func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, atom3, atom4 *Atom) (TriTuple, TriTuple, TriTuple, TriTuple) {
+	der_U_phi := -0.5 * kd * pn * math.Sin(pn*phi-phase)
+	der_phi_cos := -1 / math.Sin(phi)
+
+	vector12 := CalculateVector(atom1, atom2)
+	vector32 := CalculateVector(atom3, atom2)
+	vector43 := CalculateVector(atom4, atom3)
+
+	v_t := Cross(vector12, vector32)
+	v_u := Cross(vector43, vector32)
+
+	der_cos_tx, der_cos_ty, der_cos_tz := CalculateDerivate(v_t, v_u, phi)
+	der_cos_ux, der_cos_uy, der_cos_uz := CalculateDerivate(v_u, v_t, phi)
+
+	force_i := TriTuple{
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x),
+	}
+
+	force_j := TriTuple{
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)),
+	}
+
+	force_k := TriTuple{
+		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)),
+	}
+
+	force_l := TriTuple{
+		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y),
+		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z),
+		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x),
+	}
+
+	return force_i, force_j, force_k, force_l
+
+}
+
+func CalculateDerivate(v1, v2 TriTuple, phi float64) (float64, float64, float64) {
+	return (1 / magnitude(v1)) * (v2.x/magnitude(v2) - v1.x/magnitude(v1)*math.Cos(phi)),
+		(1 / magnitude(v1)) * (v2.y/magnitude(v2) - v1.y/magnitude(v1)*math.Cos(phi)),
+		(1 / magnitude(v1)) * (v2.z/magnitude(v2) - v1.z/magnitude(v1)*math.Cos(phi))
+}
+
+func Cross(v1, v2 TriTuple) TriTuple {
+	return TriTuple{
+		x: v1.x * v2.x,
+		y: v1.y * v2.y,
+		z: v1.z * v2.z,
+	}
+}
 func CalculateNetForce() {
 
 }
