@@ -37,5 +37,35 @@ type parameterDatabase struct {
 	atomPair []*parameterPair
 }
 
+// / read aminoacids.rtp
+type residueParameter struct {
+	name      string
+	atoms     []*atoms
+	bonds     []*bonds
+	angles    []*angles
+	dihedrals []*dihedrals
+}
+
+type atoms struct {
+	atoms []string
+	x     float64
+	y     float64
+}
+
+type bonds struct {
+	atoms []string
+	para  string
+}
+
+type angles struct {
+	atoms       []string
+	gromos_type string
+}
+
+type dihedrals struct {
+	atoms       []string
+	gromos_type string
+}
+
 //ATOM      1       N        MET          A       1              26.457  24.555  27.324  1.00 20.00           N
 //Atom   number atomName ResidueName  chainName Residueposition    X       Y       Z                       element number

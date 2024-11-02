@@ -215,3 +215,83 @@ func GetFirstLine(filePath string) (string, error) {
 
 	return "", fmt.Errorf("file does not have any lines")
 }
+
+// // This part read the aminoacids.rtp
+func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	residues := make(map[string]residueParameter)
+	var currentResidue *residueParameter
+	section := ""
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, ";") {
+			continue
+		}
+
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			section = strings.Trim(line, "[] ")
+			if section != "atoms" && section != "bonds" && section != "angles" && section != "dihedrals" && section != "impropers" &&
+				section != "all_dihedrals" && section != "HH14" && section != "RemoveDih" && section != "bondedtypes" {
+				currentResidue = &residueParameter{name: section}
+				residues[section] = *currentResidue
+			}
+			continue
+		}
+
+		if currentResidue == nil {
+			continue
+		}
+
+		switch section {
+		case "atoms":
+			parts := strings.Fields(line)
+			if len(parts) >= 4 {
+				x, _ := strconv.ParseFloat(parts[2], 64)
+				y, _ := strconv.ParseFloat(parts[3], 64)
+				currentResidue.atoms = append(currentResidue.atoms, &atoms{
+					atoms: []string{parts[0], parts[1]},
+					x:     x,
+					y:     y,
+				})
+			}
+		case "bonds":
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				currentResidue.bonds = append(currentResidue.bonds, &bonds{
+					atoms: []string{parts[0], parts[1]},
+					para:  parts[2],
+				})
+			}
+		case "angles":
+			parts := strings.Fields(line)
+			if len(parts) >= 4 {
+				currentResidue.angles = append(currentResidue.angles, &angles{
+					atoms:       []string{parts[0], parts[1], parts[2]},
+					gromos_type: parts[3],
+				})
+			}
+		case "dihedrals":
+			parts := strings.Fields(line)
+			if len(parts) >= 5 {
+				currentResidue.dihedrals = append(currentResidue.dihedrals, &dihedrals{
+					atoms:       []string{parts[0], parts[1], parts[2], parts[3]},
+					gromos_type: parts[4],
+				})
+			}
+		}
+		residues[currentResidue.name] = *currentResidue
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return residues, nil
+}
