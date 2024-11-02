@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	secline, _ := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
-	fmt.Println(secline.atomPair)
+	secline, _ := ReadAminoAcidsPara("../data/test.itp")
+	fmt.Println(secline["ALA"].dihedrals[0])
 
 }
