@@ -106,12 +106,20 @@ func PerformEnergyMinimization(currentProtein *Protein) *Protein {
 
 }
 
-func CalculateTotalEnergy(k, r, r_0 float64)
+func CalculateTotalEnergy(p *Protein) float64 {
+
+	return 1.0
+}
+
+func CalculateNetForce(a int) TriTuple {
+
+	return TriTuple{x: 1.0, y: 1.0, z: 1.0}
+}
 
 func SteepestDescent(protein *Protein, h float64) *Protein {
 	for i := range protein.Residue {
 		for j := range protein.Residue[i].Atoms {
-			force := CalculateNetForce() // need to be revised
+			force := CalculateNetForce(j) // need to be revised
 			magn := magnitude(force)
 			protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
 			protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
@@ -243,9 +251,6 @@ func Cross(v1, v2 TriTuple) TriTuple {
 		y: v1.y * v2.y,
 		z: v1.z * v2.z,
 	}
-}
-func CalculateNetForce() {
-
 }
 
 func CopyProtein(currentProtein *Protein) *Protein {
