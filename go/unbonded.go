@@ -22,6 +22,15 @@ func CalculateLJPotentialEnergy(A, B, r float64) float64 {
 	return (A / r_6) - (B / r_12)
 }
 
+// func CalculateLJForce take the result of CalculateLJPotentialEnergy
+// return the LJForce between  two atoms
+func CalculateLJForce(A, B, r float64) float64 {
+	r_6 := math.Pow(r, 6)
+	r_12 := r_6 * r_6
+
+	return (A / r_6) - (B / r_12)
+}
+
 // C: coefficient 1
 // D: coefficient 2
 // r: distance between atom 1 and atom 2
@@ -30,4 +39,10 @@ func CalculateHydrogenBondEnergy(C, D, r float64) float64 {
 	r_12 := math.Pow(r, 12)
 
 	return (C / r_10) - (D / r_12)
+}
+
+// / func NetLJFroce take a atom in protein as example,
+// / return the NetLJFroce it receive from other atoms in verlet list
+func NetLJFroce(currentProtein Protein) {
+
 }
