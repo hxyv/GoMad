@@ -73,7 +73,7 @@ func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
 	return 0.5 * k * (r - r_0) * (r - r_0)
 }
 
-func PerformEnergyMinimization(currentProtein *Protein) *Protein {
+func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
 
 	iteration := 100
 	// set maximum displacement
@@ -81,15 +81,15 @@ func PerformEnergyMinimization(currentProtein *Protein) *Protein {
 
 	for i := 0; i < iteration; i++ {
 		// calculate total Energy of original protein
-		initialEnergy := CalculateTotalEnergy(currentProtein)
+		initialEnergy, forceMap := CalculateTotalEnergyForce(currentProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 
 		tempProtein := CopyProtein(currentProtein)
 
 		// perform SteepestDescent, update positions in protein
-		SteepestDescent(tempProtein, h)
+		SteepestDescent(tempProtein, h, forceMap)
 
 		// calculate total Energy of updated protein
-		updatedEnergy := CalculateTotalEnergy(tempProtein)
+		updatedEnergy, _ := CalculateTotalEnergyForce(tempProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 
 		// if Total energy decrease, accept the changes of positions and increase maximum displacement h
 		// Otherwise, reject the changes in positions and decrease maximum displacement h
@@ -106,21 +106,156 @@ func PerformEnergyMinimization(currentProtein *Protein) *Protein {
 
 }
 
-func CalculateTotalEnergy(p *Protein) float64 {
+func CalculateTotalEnergyForce(p *Protein, residueParameterValue residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
+	forceMap := map[int]*TriTuple{}
 
-	return 1.0
+	// range over each residue in protein
+
+	bondEnergy := 0.0
+	angleEnergy := 0.0
+	for _, residue := range p.Residue {
+
+		// Calculate bondstretch energy
+		// range over each bond
+		for _, bondPairs := range residueParameterValue.bonds {
+			for i := 0; i < len(residue.Atoms)-1; i++ {
+				atom1 := residue.Atoms[i]
+				if atom1.element == (*bondPairs).atoms[0] {
+					for j := i + 1; j < len(residue.Atoms); j++ {
+						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
+							atom2 := residue.Atoms[j]
+							r := Distance(atom1.position, atom2.position)
+							parameterList := SearchParameter(bondParameter, atom1, atom2)
+							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
+							force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
+							forceMap[i].x += force.x
+							forceMap[i].y += force.y
+							forceMap[i].z += force.z
+
+							forceMap[j].x += -force.x
+							forceMap[j].y += -force.y
+							forceMap[j].z += -force.z
+
+						}
+					}
+				}
+			}
+		}
+
+		for _, angleTris := range residueParameterValue.angles {
+			for i := 0; i < len(residue.Atoms)-2; i++ {
+				atom1 := residue.Atoms[i]
+				if atom1.element == (*angleTris).atoms[0] {
+					for j := i + 1; j < len(residue.Atoms)-1; j++ {
+						if residue.Atoms[j].element == (*angleTris).atoms[1] {
+							atom2 := residue.Atoms[j]
+							for k := j + 1; k < len(residue.Atoms); k++ {
+								if residue.Atoms[k].element == (*angleTris).atoms[2] {
+									atom3 := residue.Atoms[k]
+									theta := CalculateAngle(atom1, atom2, atom3)
+									parameterList := SearchParameter(angleParameter, atom1, atom2, atom3)
+									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
+									forceMap[i].x += force_i.x
+									forceMap[i].y += force_i.y
+									forceMap[i].z += force_i.z
+
+									forceMap[j].x += force_j.x
+									forceMap[j].y += force_j.y
+									forceMap[j].z += force_j.z
+
+									forceMap[k].x += force_k.x
+									forceMap[k].y += force_k.y
+									forceMap[k].z += force_k.z
+
+								}
+							}
+
+						}
+					}
+				}
+			}
+		}
+
+		for _, dihedralValues := range residueParameterValue.dihedrals {
+			for i := 0; i < len(residue.Atoms)-3; i++ {
+				atom1 := residue.Atoms[i]
+				if atom1.element == (*dihedralValues).atoms[0] {
+					for j := i + 1; j < len(residue.Atoms)-2; j++ {
+						if residue.Atoms[j].element == (*dihedralValues).atoms[1] {
+							atom2 := residue.Atoms[j]
+							for k := j + 1; k < len(residue.Atoms)-1; k++ {
+								if residue.Atoms[k].element == (*dihedralValues).atoms[2] {
+									atom3 := residue.Atoms[k]
+									for l := k + 1; l < len(residue.Atoms); l++ {
+										if residue.Atoms[l].element == (*dihedralValues).atoms[3] {
+											atom4 := residue.Atoms[l]
+
+											phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
+											parameterList := SearchParameter(dihedralParameter, atom1, atom2, atom3, atom4)
+											angleEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+											force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
+											forceMap[i].x += force_i.x
+											forceMap[i].y += force_i.y
+											forceMap[i].z += force_i.z
+
+											forceMap[j].x += force_j.x
+											forceMap[j].y += force_j.y
+											forceMap[j].z += force_j.z
+
+											forceMap[k].x += force_k.x
+											forceMap[k].y += force_k.y
+											forceMap[k].z += force_k.z
+
+											forceMap[l].x += force_l.x
+											forceMap[l].y += force_l.y
+											forceMap[l].z += force_l.z
+										}
+									}
+								}
+
+							}
+
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//  unfinished for nonbonded
+
+	return 1.0, forceMap
 }
 
+func SearchParameter(parameterData parameterDatabase, atoms ...*Atom) []float64 {
+	for i := range parameterData.atomPair {
+		sym := 0
+		for j := range parameterData.atomPair[i].atomName {
+			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
+				break
+			}
+			sym += 1
+		}
+
+		if sym == 4 {
+			return parameterData.atomPair[i].parameter
+		}
+
+	}
+
+	return []float64{0.0}
+}
 func CalculateNetForce(a int) TriTuple {
 
 	return TriTuple{x: 1.0, y: 1.0, z: 1.0}
 }
 
-func SteepestDescent(protein *Protein, h float64) *Protein {
+func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *Protein {
 	for i := range protein.Residue {
 		for j := range protein.Residue[i].Atoms {
-			force := CalculateNetForce(j) // need to be revised
-			magn := magnitude(force)
+			force := forceMap[protein.Residue[i].Atoms.index-1]
+			magn := magnitude(*force)
 			protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
 			protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
 			protein.Residue[i].Atoms[j].position.z = protein.Residue[i].Atoms[j].position.z + (force.z*h)/magn
