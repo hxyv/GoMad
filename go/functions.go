@@ -254,7 +254,7 @@ func CalculateNetForce(a int) TriTuple {
 func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *Protein {
 	for i := range protein.Residue {
 		for j := range protein.Residue[i].Atoms {
-			force := forceMap[protein.Residue[i].Atoms.index-1]
+			force := forceMap[protein.Residue[i].Atoms[j].index+1]
 			magn := magnitude(*force)
 			protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
 			protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
