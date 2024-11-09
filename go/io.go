@@ -321,3 +321,72 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 
 	return residues, nil
 }
+
+func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	chargeData := make(map[string]map[string]AtomChargeData)
+	scanner := bufio.NewScanner(file)
+	var currentResidue string
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Skip empty lines
+		if line == "" {
+			continue
+		}
+
+		// Check for residue header lines like "[ ALA ]"
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			currentResidue = strings.TrimSpace(line[1 : len(line)-1])
+			chargeData[currentResidue] = make(map[string]AtomChargeData)
+			continue
+		}
+
+		// Parse atom data lines
+		fields := strings.Fields(line)
+
+		// Ensure that we have exactly four columns
+		if len(fields) != 4 {
+			return nil, fmt.Errorf("invalid line format: %s", line)
+		}
+
+		atomName := fields[0]
+		atomType := fields[1]
+		atomChargeStr := fields[2]
+		chargeGroupStr := fields[3]
+
+		// Parse atom charge
+		atomCharge, err := strconv.ParseFloat(atomChargeStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid atom charge '%s' in line: %s", atomChargeStr, line)
+		}
+
+		// Parse charge group (can be integer)
+		chargeGroup, err := strconv.Atoi(chargeGroupStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid charge group '%s' in line: %s", chargeGroupStr, line)
+		}
+
+		// Store the charge data
+		if currentResidue == "" {
+			return nil, fmt.Errorf("atom data without residue header: %s", line)
+		}
+		chargeData[currentResidue][atomName] = AtomChargeData{
+			AtomType:    atomType,
+			AtomCharge:  atomCharge,
+			ChargeGroup: chargeGroup,
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return chargeData, nil
+}

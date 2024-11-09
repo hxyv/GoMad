@@ -4,12 +4,12 @@ import (
 	"math"
 )
 
-// q1: the charge of ion 1
-// q2: the charge of ion 2
+// a1: the atom 1
+// a2: the atom 2
 // epsilon: the vacuum dielectric permittivity
 // r: distance between q1 and q2
-func CalculateElectricPotentialEnergy(q1, q2, epsilon, r float64) float64 {
-	return (q1 * q2) / (4 * math.Pi * epsilon * r)
+func CalculateElectricPotentialEnergy(a1, a2 Atom, epsilon, r float64) float64 {
+	return (a1.charge * a2.charge) / (4 * math.Pi * epsilon * r)
 }
 
 // A: coefficient 1
@@ -45,4 +45,58 @@ func CalculateHydrogenBondEnergy(C, D, r float64) float64 {
 // / return the NetLJFroce it receive from other atoms in verlet list
 func NetLJFroce(currentProtein Protein) {
 
+}
+
+func NewVerletList(cutoffDist, bufferDist float64) *VerletList {
+	return &VerletList{
+		Neighbors: make(map[*Atom][]*Atom),
+		Cutoff:    cutoffDist,
+		Buffer:    bufferDist,
+	}
+}
+
+func (v *VerletList) BuildVerlet(protein *Protein) {
+	cutoffPlusBuffer := v.Cutoff + v.Buffer
+	v.Neighbors = make(map[*Atom][]*Atom)
+
+	for _, residue := range protein.Residue {
+		for _, atom := range residue.Atoms {
+			for _, targetResidue := range protein.Residue {
+				for _, targetAtom := range targetResidue.Atoms {
+					if atom != targetAtom {
+						distance := Distance(atom.position, targetAtom.position)
+						if distance <= cutoffPlusBuffer {
+							v.Neighbors[atom] = append(v.Neighbors[atom], targetAtom)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func (protein *Protein) assignChargesToProtein(chargeData map[string]map[string]AtomChargeData) {
+	for _, residue := range protein.Residue {
+		residueName := residue.Name
+
+		// Get the charge data for this residue, if it exists
+		residueChargeData, residueExists := chargeData[residueName]
+
+		for _, atom := range residue.Atoms {
+			atomName := atom.element
+
+			if residueExists {
+				// Try to get the charge data for this atom
+				atomChargeData, atomExists := residueChargeData[atomName]
+				if atomExists {
+					// Assign the charge from the charge data
+					atom.charge = atomChargeData.AtomCharge
+					continue
+				}
+			}
+
+			// If there's no data for this atom or residue, assign a charge of 0
+			atom.charge = 0.0
+		}
+	}
 }

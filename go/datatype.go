@@ -6,6 +6,12 @@ type TriTuple struct {
 	z float64
 }
 
+type VerletList struct {
+	Neighbors map[*Atom][]*Atom
+	Cutoff    float64
+	Buffer    float64
+}
+
 type Protein struct {
 	Name    string
 	Residue []*Residue
@@ -26,6 +32,13 @@ type Atom struct {
 	accelerated TriTuple
 	mass        float64
 	element     string
+	charge      float64
+}
+
+type AtomChargeData struct {
+	AtomType    string
+	AtomCharge  float64
+	ChargeGroup int
 }
 
 type parameterPair struct {
