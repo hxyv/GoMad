@@ -6,6 +6,12 @@ type TriTuple struct {
 	z float64
 }
 
+type VerletList struct {
+	Neighbors map[*Atom][]*Atom
+	Cutoff    float64
+	Buffer    float64
+}
+
 type Protein struct {
 	Name    string
 	Residue []*Residue
