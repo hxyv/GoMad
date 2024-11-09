@@ -31,6 +31,13 @@ type Atom struct {
 	accelerated TriTuple
 	mass        float64
 	element     string
+	charge      float64
+}
+
+type AtomChargeData struct {
+	AtomType    string
+	AtomCharge  float64
+	ChargeGroup int
 }
 
 type parameterPair struct {

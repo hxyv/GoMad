@@ -4,12 +4,12 @@ import (
 	"math"
 )
 
-// q1: the charge of ion 1
-// q2: the charge of ion 2
+// a1: the atom 1
+// a2: the atom 2
 // epsilon: the vacuum dielectric permittivity
 // r: distance between q1 and q2
-func CalculateElectricPotentialEnergy(q1, q2, epsilon, r float64) float64 {
-	return (q1 * q2) / (4 * math.Pi * epsilon * r)
+func CalculateElectricPotentialEnergy(a1, a2 Atom, epsilon, r float64) float64 {
+	return (a1.charge * a2.charge) / (4 * math.Pi * epsilon * r)
 }
 
 // A: coefficient 1
@@ -71,6 +71,32 @@ func (v *VerletList) BuildVerlet(protein *Protein) {
 					}
 				}
 			}
+		}
+	}
+}
+
+func (protein *Protein) assignChargesToProtein(chargeData map[string]map[string]AtomChargeData) {
+	for _, residue := range protein.Residue {
+		residueName := residue.Name
+
+		// Get the charge data for this residue, if it exists
+		residueChargeData, residueExists := chargeData[residueName]
+
+		for _, atom := range residue.Atoms {
+			atomName := atom.element
+
+			if residueExists {
+				// Try to get the charge data for this atom
+				atomChargeData, atomExists := residueChargeData[atomName]
+				if atomExists {
+					// Assign the charge from the charge data
+					atom.charge = atomChargeData.AtomCharge
+					continue
+				}
+			}
+
+			// If there's no data for this atom or residue, assign a charge of 0
+			atom.charge = 0.0
 		}
 	}
 }

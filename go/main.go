@@ -10,6 +10,26 @@ func main() {
 	//fmt.Println(secline.atomPair)
 	printParameterDatabase(&secline)
 
+	protein, err := readProteinFromFile("../data/calmodulin_noCA.pdb")
+
+	// Parse the charge data file
+	chargeData, err := parseChargeFile("../data/gromacs43_atom_charge.rtp")
+	if err != nil {
+		fmt.Printf("Error parsing charge file: %v\n", err)
+		return
+	}
+
+	// Assign charges to the protein's atoms
+	(&protein).assignChargesToProtein(chargeData)
+
+	// Print out the charges to verify
+	for _, residue := range protein.Residue {
+		fmt.Printf("Residue: %s\n", residue.Name)
+		for _, atom := range residue.Atoms {
+			fmt.Printf("  Atom: %s, Charge: %f\n", atom.element, atom.charge)
+		}
+	}
+
 }
 
 func Check(err error) {
