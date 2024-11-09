@@ -13,7 +13,7 @@ func CalculateAnglePotentialEnergy(k, theta, theta_0 float64) float64 {
 }
 
 func CalculateProperDihedralAngleEnergy(kd, phi, pn, phase float64) float64 {
-	return kd * (1 + math.Cos(pn*phi-phase))
+	return 0.5 * kd * (1 + math.Cos(pn*phi-phase))
 }
 
 func CalculateAngle(atom1, atom2, atom3 *Atom) float64 {
