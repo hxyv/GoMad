@@ -1,8 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func main() {
 	secline, err := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
@@ -36,9 +34,9 @@ func Check(err error) {
 	if err != nil {
 		panic(err)
 	}
+
 }
 
-// A function to print the contents of parameterDatabase
 func printParameterDatabase(db *parameterDatabase) {
 	for _, pair := range db.atomPair {
 		fmt.Println("Atom Names:")

@@ -34,13 +34,13 @@ func parsePDBLine(line string) (Atom, string, error) {
 
 	// Parse element symbol
 	element := fields[2]
-
+	index, _ := strconv.Atoi(fields[1])
 	// pass value to atom object
 	atom.position.x = x
 	atom.position.y = y
 	atom.position.z = z
 	atom.element = element
-
+	atom.index = index
 	// Extract residue name
 	residueName := fields[3]
 
@@ -99,8 +99,34 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 	// Set the residues in the protein
 	protein.Residue = residues
+	protein.UpdateMasses(massTable)
 
 	return protein, nil
+}
+
+func (p *Protein) UpdateMasses(massTable map[string]float64) {
+	for _, residue := range p.Residue {
+		for _, atom := range residue.Atoms {
+			// Extract the first character of the element to match in the mass table
+			baseElement := string(atom.element[0])
+
+			if mass, found := massTable[baseElement]; found {
+				atom.mass = mass
+			} else {
+				fmt.Printf("Warning: Mass not found for element %s (using base element %s)\n", atom.element, baseElement)
+				atom.mass = 0.0 //
+			}
+		}
+	}
+}
+
+var massTable = map[string]float64{
+	"H": 1.0079,
+	"C": 12.0107,
+	"N": 14.0067,
+	"O": 15.9994,
+	"S": 32.065,
+	// Add more elements as needed
 }
 
 // /////////////////

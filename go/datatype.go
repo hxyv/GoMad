@@ -25,6 +25,7 @@ type Residue struct {
 }
 
 type Atom struct {
+	index       int
 	position    TriTuple
 	velocity    TriTuple
 	force       TriTuple
@@ -50,6 +51,9 @@ type parameterDatabase struct {
 	atomPair []*parameterPair
 }
 
+// ///
+// //
+// //
 // / read aminoacids.rtp
 type residueParameter struct {
 	name      string
@@ -80,5 +84,5 @@ type dihedrals struct {
 	gromos_type string
 }
 
-//ATOM      1       N        MET          A       1              26.457  24.555  27.324  1.00 20.00           N
-//Atom   number atomName ResidueName  chainName Residueposition    X       Y       Z                       element number
+// ATOM      1       N        MET          A       1              26.457  24.555  27.324  1.00 20.00           N
+// Atom   number atomName ResidueName  chainName Residueposition    X       Y       Z                       element number
