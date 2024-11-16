@@ -6,6 +6,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
 // /////////////////
@@ -389,4 +393,28 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 	}
 
 	return chargeData, nil
+}
+
+func TemporaryPlot(RMSD []float64) {
+	p := plot.New()
+
+	p.Title.Text = "Plot Example"
+	p.X.Label.Text = "X"
+	p.Y.Label.Text = "Y"
+
+	points := make(plotter.XYs, len(RMSD))
+	for i := range points {
+		points[i].X = float64(i)
+		points[i].Y = RMSD[i]
+	}
+
+	s, err := plotter.NewScatter(points)
+	if err != nil {
+		panic(err)
+	}
+
+	p.Add(s)
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "scatter.png"); err != nil {
+		panic(err)
+	}
 }
