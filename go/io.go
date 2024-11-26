@@ -414,7 +414,9 @@ func TemporaryPlot(RMSD []float64) {
 	}
 
 	p.Add(s)
+
 	if err := p.Save(4*vg.Inch, 4*vg.Inch, "scatter.png"); err != nil {
 		panic(err)
 	}
+
 }

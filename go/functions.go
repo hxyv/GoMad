@@ -75,7 +75,7 @@ func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
 
-	iteration := 100
+	iteration := 50
 	// set maximum displacement
 	h := 0.01
 
@@ -118,18 +118,22 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 		// Calculate bondstretch energy
 		// range over each bond
+
 		for _, bondPairs := range residueParameterValue[residue.Name].bonds {
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
 				if atom1.element[0] == (*bondPairs).atoms[0][0] {
 					for j := i + 1; j < len(residue.Atoms); j++ {
 						if residue.Atoms[j].element[0] == (*bondPairs).atoms[1][0] {
+
 							atom2 := residue.Atoms[j]
 							r := Distance(atom1.position, atom2.position)
-							parameterList := SearchParameter(bondParameter, atom1, atom2)
+							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 							if len(parameterList) != 1 {
+
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
+
 								_, exist := forceMap[i]
 								if exist {
 									forceMap[i].x += force.x
@@ -173,10 +177,12 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if residue.Atoms[k].element[0] == (*angleTris).atoms[2][0] {
 									atom3 := residue.Atoms[k]
 									theta := CalculateAngle(atom1, atom2, atom3)
-									parameterList := SearchParameter(angleParameter, atom1, atom2, atom3)
+									parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
 									if len(parameterList) != 1 {
+
 										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
 										force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
+
 										_, exist := forceMap[i]
 										if exist {
 											forceMap[i].x += force_i.x
@@ -238,10 +244,12 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 										if residue.Atoms[l].element[0] == (*dihedralValues).atoms[3][0] {
 											atom4 := residue.Atoms[l]
 											phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
-											parameterList := SearchParameter(dihedralParameter, atom1, atom2, atom3, atom4)
+											parameterList := SearchParameter(4, dihedralParameter, atom1, atom2, atom3, atom4)
 											if len(parameterList) != 1 {
+
 												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
 												force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
+
 												_, exist := forceMap[i]
 												if exist {
 													forceMap[i].x += force_i.x
@@ -302,6 +310,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 				}
 			}
 		}
+
 	}
 
 	//  unfinished for nonbonded
@@ -310,7 +319,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 	return totalEnergy, forceMap
 }
 
-func SearchParameter(parameterData parameterDatabase, atoms ...*Atom) []float64 {
+func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom) []float64 {
 	for i := range parameterData.atomPair {
 		sym := 0
 		for j := range parameterData.atomPair[i].atomName {
@@ -320,7 +329,7 @@ func SearchParameter(parameterData parameterDatabase, atoms ...*Atom) []float64 
 			sym += 1
 		}
 
-		if sym == 4 {
+		if sym == value {
 			return parameterData.atomPair[i].parameter
 		}
 
@@ -360,7 +369,7 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 		z: (atom2.position.z - atom1.position.z) / bondLen,
 	}
 
-	fScale := -k * (r - r_0)
+	fScale := k * (r - r_0)
 	force := TriTuple{
 		x: fScale * unitVector.x,
 		y: fScale * unitVector.y,
@@ -373,7 +382,9 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (TriTuple, TriTuple, TriTuple) {
 	der_U_thate := k * (theta - theta_0)
 	der_that_cos := (-1) * (1 / math.Sin(theta))
-
+	if math.IsNaN(der_that_cos) {
+		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
+	}
 	der_theta_x_12 := DerivateAnglePositionX(atom1, atom2, atom3, theta)
 	der_theta_x_32 := DerivateAnglePositionX(atom3, atom2, atom2, theta)
 
@@ -401,6 +412,9 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 		z: -force_i.z - force_k.z,
 	}
 
+	if math.IsNaN(force_i.x) || math.IsNaN(force_j.x) || math.IsNaN(force_k.x) {
+		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
+	}
 	return force_i, force_j, force_k
 
 }
