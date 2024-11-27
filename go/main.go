@@ -3,13 +3,9 @@ package main
 import "fmt"
 
 func main() {
-	/*
-		secline, err := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
-		Check(err)
-		//fmt.Println(secline.atomPair)
-		printParameterDatabase(&secline)
-	*/
 	protein, err := readProteinFromFile("../data/calmodulin_noCA.pdb")
+	fmt.Println(len(protein.Residue))
+	Check(err)
 
 	// Parse the charge data file
 	chargeData, err := parseChargeFile("../data/gromacs43_atom_charge.rtp")
@@ -19,17 +15,8 @@ func main() {
 	}
 
 	// Assign charges to the protein's atoms
-	(&protein).assignChargesToProtein(chargeData)
+	(&protein).AssignChargesToProtein(chargeData)
 
-	/*
-		// Print out the charges to verify
-		for _, residue := range protein.Residue {
-			fmt.Printf("Residue: %s\n", residue.Name)
-			for _, atom := range residue.Atoms {
-				fmt.Printf("  Atom: %s, Charge: %f\n", atom.element, atom.charge)
-			}
-		}
-	*/
 	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
 	Check(error)
 	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
@@ -68,5 +55,16 @@ func printParameterDatabase(db *parameterDatabase) {
 			fmt.Printf("  %.2f\n", param)
 		}
 		fmt.Println()
+	}
+}
+
+func printProtein(protein *Protein) {
+	fmt.Printf("Protein Name: %s\n", protein.Name)
+	for _, residue := range protein.Residue {
+		fmt.Printf("  Residue Name: %s, ID: %d, ChainID: %s\n", residue.Name, residue.ID, residue.ChainID)
+		for _, atom := range residue.Atoms {
+			fmt.Printf("    Atom Index: %d, Element: %s, Position: (%.2f, %.2f, %.2f)\n",
+				atom.index, atom.element, atom.position.x, atom.position.y, atom.position.z)
+		}
 	}
 }
