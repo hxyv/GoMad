@@ -3,11 +3,6 @@ package main
 import "fmt"
 
 func main() {
-	//secline, err := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
-	//Check(err)
-	//fmt.Println(secline.atomPair)
-	//printParameterDatabase(&secline)
-
 	protein, err := readProteinFromFile("../data/calmodulin_noCA.pdb")
 	fmt.Println(len(protein.Residue))
 	Check(err)
@@ -22,35 +17,23 @@ func main() {
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
 
-	// // Print out the charges to verify
-	// for _, residue := range protein.Residue {
-	// 	fmt.Printf("Residue: %s\n", residue.Name)
-	// 	for _, atom := range residue.Atoms {
-	// 		fmt.Printf("  Atom: %s, Charge: %f\n", atom.element, atom.charge)
-	// 	}
-	// }
-
-	verletList := NewVerletList()
-	verletList.BuildVerlet(&protein)
-	// Print nearest neighbors in the Verlet list
-	// for atom, neighbors := range verletList.Neighbors {
-	// 	fmt.Printf("Atom %d (%s) neighbors:\n", atom.index, atom.element)
-	// 	for _, neighbor := range neighbors {
-	// 		fmt.Printf("  Neighbor Atom %d (%s) at (%.2f, %.2f, %.2f)\n", neighbor.index, neighbor.element, neighbor.position.x, neighbor.position.y, neighbor.position.z)
-	// 	}
-	// }
-	// printProtein(&protein)
-
-	// Calculate energy for each atom
-	for i := 0; i < len(protein.Residue); i++ {
-		energyMap := CalculateTotalUnbondEnergy(protein.Residue[i].Atoms, verletList)
-
-		// Output the energy for each atom
-		for index, energy := range energyMap {
-			fmt.Printf("Atom %d: Energy = %f\n", index, energy)
-		}
-	}
-
+	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+	time := 0.0000001
+	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+	RSMD := CalculateRMSD(timepoints)
+	TemporaryPlot(RSMD)
 }
 
 func Check(err error) {
