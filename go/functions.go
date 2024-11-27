@@ -313,6 +313,282 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 	}
 
+	// additional addtion in interactions between two AA
+	// additional connecting bonds
+	index1 := 0
+	for m, aminoA := range p.Residue {
+		if m == len(p.Residue)-1 {
+			break
+		}
+
+		for n := range aminoA.Atoms {
+			if aminoA.Atoms[n].element == "CB" {
+				atom1 := aminoA.Atoms[n]
+				for t := range p.Residue[m+1].Atoms {
+					if p.Residue[m+1].Atoms[t].element == "N" {
+						atom2 := p.Residue[m+1].Atoms[t]
+						r := Distance(atom1.position, atom2.position)
+						parameterList := SearchParameter(2, bondParameter, atom1, atom2)
+						if len(parameterList) != 1 {
+							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
+							force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
+
+							_, exist := forceMap[index1+n]
+							if exist {
+								forceMap[index1+n].x += force.x
+								forceMap[index1+n].y += force.y
+								forceMap[index1+n].z += force.z
+							} else {
+								forceMap[index1+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index1+n].x = force.x
+								forceMap[index1+n].y = force.y
+								forceMap[index1+n].z = force.z
+							}
+
+							_, exist1 := forceMap[index1+n+len(aminoA.Atoms)]
+							if exist1 {
+								forceMap[index1+t+len(aminoA.Atoms)].x += -force.x
+								forceMap[index1+t+len(aminoA.Atoms)].y += -force.y
+								forceMap[index1+t+len(aminoA.Atoms)].z += -force.z
+							} else {
+								forceMap[index1+t+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index1+t+len(aminoA.Atoms)].x = -force.x
+								forceMap[index1+t+len(aminoA.Atoms)].y = -force.y
+								forceMap[index1+t+len(aminoA.Atoms)].z = -force.z
+							}
+						}
+					}
+				}
+			}
+			break
+		}
+		index1 += len(aminoA.Atoms)
+
+	}
+
+	// additonal for angle
+	index2 := 0
+	for m, aminoA := range p.Residue {
+		if m == len(p.Residue)-1 {
+			break
+		}
+
+		for n := range aminoA.Atoms {
+			if aminoA.Atoms[n].element == "CB" {
+				atom1 := aminoA.Atoms[n]
+
+				for g := range p.Residue[m+1].Atoms {
+					if p.Residue[m+1].Atoms[g].element == "N" {
+						atom2 := p.Residue[m+1].Atoms[g]
+						for h := g + 1; h < len(p.Residue[m+1].Atoms); h++ {
+							if p.Residue[m+1].Atoms[h].element == "H" {
+								atom3 := p.Residue[m+1].Atoms[h]
+								theta := CalculateAngle(atom1, atom2, atom3)
+								parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
+								if len(parameterList) != 1 {
+
+									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
+
+									_, exist := forceMap[index2+n]
+									if exist {
+										forceMap[index2+n].x += force_i.x
+										forceMap[index2+n].y += force_i.y
+										forceMap[index2+n].z += force_i.z
+									} else {
+										forceMap[index2+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index2+n].x = force_i.x
+										forceMap[index2+n].y = force_i.y
+										forceMap[index2+n].z = force_i.z
+									}
+
+									_, exist1 := forceMap[index2+g+len(aminoA.Atoms)]
+									if exist1 {
+										forceMap[index2+g+len(aminoA.Atoms)].x += force_j.x
+										forceMap[index2+g+len(aminoA.Atoms)].y += force_j.y
+										forceMap[index2+g+len(aminoA.Atoms)].z += force_j.z
+									} else {
+										forceMap[index2+g+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index2+g+len(aminoA.Atoms)].x = force_j.x
+										forceMap[index2+g+len(aminoA.Atoms)].y = force_j.y
+										forceMap[index2+g+len(aminoA.Atoms)].z = force_j.z
+									}
+
+									_, exist2 := forceMap[index2+h+len(aminoA.Atoms)]
+									if exist2 {
+										forceMap[index2+h+len(aminoA.Atoms)].x += force_k.x
+										forceMap[index2+h+len(aminoA.Atoms)].y += force_k.y
+										forceMap[index2+h+len(aminoA.Atoms)].z += force_k.z
+									} else {
+										forceMap[index2+h+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index2+h+len(aminoA.Atoms)].x = force_k.x
+										forceMap[index2+h+len(aminoA.Atoms)].y = force_k.y
+										forceMap[index2+h+len(aminoA.Atoms)].z = force_k.z
+									}
+
+								}
+							}
+						}
+					}
+				}
+			}
+
+		}
+		index2 += len(aminoA.Atoms)
+
+	}
+
+	index3 := 0
+	for m, aminoA := range p.Residue {
+		if m == len(p.Residue)-1 {
+			break
+		}
+
+		for n := range aminoA.Atoms {
+			if aminoA.Atoms[n].element == "O" {
+				atom1 := aminoA.Atoms[n]
+				atom2 := aminoA.Atoms[n+1]
+				for g := range p.Residue[m+1].Atoms {
+					if p.Residue[m+1].Atoms[g].element == "N" {
+						atom3 := p.Residue[m+1].Atoms[g]
+						theta := CalculateAngle(atom1, atom2, atom3)
+						parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
+						if len(parameterList) != 1 {
+
+							angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+							force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
+
+							_, exist := forceMap[index3+n]
+							if exist {
+								forceMap[index3+n].x += force_i.x
+								forceMap[index3+n].y += force_i.y
+								forceMap[index3+n].z += force_i.z
+							} else {
+								forceMap[index3+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index3+n].x = force_i.x
+								forceMap[index3+n].y = force_i.y
+								forceMap[index3+n].z = force_i.z
+							}
+
+							_, exist1 := forceMap[index3+n+1]
+							if exist1 {
+								forceMap[index3+n+1].x += force_j.x
+								forceMap[index3+n+1].y += force_j.y
+								forceMap[index3+n+1].z += force_j.z
+							} else {
+								forceMap[index3+n+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index3+n+1].x = force_j.x
+								forceMap[index3+n+1].y = force_j.y
+								forceMap[index3+n+1].z = force_j.z
+							}
+
+							_, exist2 := forceMap[index3+g+len(aminoA.Atoms)]
+							if exist2 {
+								forceMap[index3+g+len(aminoA.Atoms)].x += force_k.x
+								forceMap[index3+g+len(aminoA.Atoms)].y += force_k.y
+								forceMap[index3+g+len(aminoA.Atoms)].z += force_k.z
+							} else {
+								forceMap[index3+g+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index3+g+len(aminoA.Atoms)].x = force_k.x
+								forceMap[index3+g+len(aminoA.Atoms)].y = force_k.y
+								forceMap[index3+g+len(aminoA.Atoms)].z = force_k.z
+							}
+
+						}
+
+					}
+				}
+			}
+
+		}
+		index3 += len(aminoA.Atoms)
+
+	}
+
+	// additional for dihedral
+	index4 := 0
+	for m, aminoA := range p.Residue {
+		if m == len(p.Residue)-1 {
+			break
+		}
+
+		for n := range aminoA.Atoms {
+			if aminoA.Atoms[n].element == "CB" {
+				atom1 := aminoA.Atoms[n]
+				atom2 := aminoA.Atoms[n+1]
+				for g := range p.Residue[m+1].Atoms {
+					if p.Residue[m+1].Atoms[g].element == "N" {
+						atom3 := p.Residue[m+1].Atoms[g]
+						for h := g + 1; h < len(p.Residue[m+1].Atoms); h++ {
+							if p.Residue[m+1].Atoms[h].element == "H" {
+								atom4 := p.Residue[m+1].Atoms[h]
+								phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
+								parameterList := []float64{180.0, 6.90360, 2}
+								if len(parameterList) != 1 {
+
+									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
+
+									_, exist := forceMap[index4+n]
+									if exist {
+										forceMap[index4+n].x += force_i.x
+										forceMap[index4+n].y += force_i.y
+										forceMap[index4+n].z += force_i.z
+									} else {
+										forceMap[index4+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index4+n].x = force_i.x
+										forceMap[index4+n].y = force_i.y
+										forceMap[index4+n].z = force_i.z
+									}
+
+									_, exist1 := forceMap[index4+n+1]
+									if exist1 {
+										forceMap[index4+n+1].x += force_j.x
+										forceMap[index4+n+1].y += force_j.y
+										forceMap[index4+n+1].z += force_j.z
+									} else {
+										forceMap[index4+n+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index4+n+1].x = force_j.x
+										forceMap[index4+n+1].y = force_j.y
+										forceMap[index4+n+1].z = force_j.z
+									}
+
+									_, exist2 := forceMap[index4+g+len(aminoA.Atoms)]
+									if exist2 {
+										forceMap[index4+g+len(aminoA.Atoms)].x += force_k.x
+										forceMap[index4+g+len(aminoA.Atoms)].y += force_k.y
+										forceMap[index4+g+len(aminoA.Atoms)].z += force_k.z
+									} else {
+										forceMap[index4+g+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index4+g+len(aminoA.Atoms)].x = force_k.x
+										forceMap[index4+g+len(aminoA.Atoms)].y = force_k.y
+										forceMap[index4+g+len(aminoA.Atoms)].z = force_k.z
+									}
+
+									_, exist3 := forceMap[index4+h+len(aminoA.Atoms)]
+									if exist3 {
+										forceMap[index4+h+len(aminoA.Atoms)].x += force_l.x
+										forceMap[index4+h+len(aminoA.Atoms)].y += force_l.y
+										forceMap[index4+h+len(aminoA.Atoms)].z += force_l.z
+									} else {
+										forceMap[index4+h+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[index4+h+len(aminoA.Atoms)].x = force_l.x
+										forceMap[index4+h+len(aminoA.Atoms)].y = force_l.y
+										forceMap[index4+h+len(aminoA.Atoms)].z = force_l.z
+									}
+
+								}
+							}
+						}
+					}
+				}
+			}
+
+		}
+		index2 += len(aminoA.Atoms)
+
+	}
+
 	//  unfinished for nonbonded
 
 	totalEnergy := bondEnergy + angleEnergy + dihedralEnergy
@@ -323,6 +599,9 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 	for i := range parameterData.atomPair {
 		sym := 0
 		for j := range parameterData.atomPair[i].atomName {
+			if parameterData.atomPair[i].atomName[j] == "X" {
+				continue
+			}
 			if atoms[j].element[0] != parameterData.atomPair[i].atomName[j][0] {
 				break
 			}
@@ -364,9 +643,9 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 	bondLen := Distance(atom1.position, atom2.position)
 	unitVector := TriTuple{
-		x: (atom2.position.x - atom1.position.x) / bondLen,
-		y: (atom2.position.y - atom1.position.y) / bondLen,
-		z: (atom2.position.z - atom1.position.z) / bondLen,
+		x: (atom1.position.x - atom2.position.x) / bondLen,
+		y: (atom1.position.y - atom2.position.y) / bondLen,
+		z: (atom1.position.z - atom2.position.z) / bondLen,
 	}
 
 	fScale := k * (r - r_0)
