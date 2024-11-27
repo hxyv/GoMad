@@ -6,47 +6,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
-// /////////////////
-// ////////////////
 // ///////////////
 // ////These function are used for read protein from PDB
+// ///////////////
 
-// Function to parse a PDB line based on spaces
-func parsePDBLine(line string) (Atom, string, error) {
-	fields := strings.Fields(line)
-	var atom Atom
+// **** highest level function *****
 
-	// Parse coordinates
-	x, err := strconv.ParseFloat(fields[6], 64)
-	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing x position: %v", err)
-	}
-	y, err := strconv.ParseFloat(fields[7], 64)
-	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing y position: %v", err)
-	}
-	z, err := strconv.ParseFloat(fields[8], 64)
-	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing z position: %v", err)
-	}
-
-	// Parse element symbol
-	element := fields[2]
-	index, _ := strconv.Atoi(fields[1])
-	// pass value to atom object
-	atom.position.x = x
-	atom.position.y = y
-	atom.position.z = z
-	atom.element = element
-	atom.index = index
-	// Extract residue name
-	residueName := fields[3]
-
-	return atom, residueName, nil
-}
-
+// readProteinFromFile take a fileName as example
+// return the Protein structure using the informtion of file
 func readProteinFromFile(fileName string) (Protein, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -99,11 +72,48 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 	// Set the residues in the protein
 	protein.Residue = residues
+	// upload weight of each atoms
 	protein.UpdateMasses(massTable)
 
 	return protein, nil
 }
 
+// Function to parse a PDB line based on spaces
+func parsePDBLine(line string) (Atom, string, error) {
+	fields := strings.Fields(line)
+	var atom Atom
+
+	// Parse coordinates
+	x, err := strconv.ParseFloat(fields[6], 64)
+	if err != nil {
+		return Atom{}, "", fmt.Errorf("error parsing x position: %v", err)
+	}
+	y, err := strconv.ParseFloat(fields[7], 64)
+	if err != nil {
+		return Atom{}, "", fmt.Errorf("error parsing y position: %v", err)
+	}
+	z, err := strconv.ParseFloat(fields[8], 64)
+	if err != nil {
+		return Atom{}, "", fmt.Errorf("error parsing z position: %v", err)
+	}
+
+	// Parse element symbol
+	element := fields[2]
+	index, _ := strconv.Atoi(fields[1])
+	// pass value to atom object
+	atom.position.x = x
+	atom.position.y = y
+	atom.position.z = z
+	atom.element = element
+	atom.index = index
+	// Extract residue name
+	residueName := fields[3]
+
+	return atom, residueName, nil
+}
+
+// func UpdateMasses take a massTable and a protein structure as inpue
+// it upload the mass of each atom within the protein
 func (p *Protein) UpdateMasses(massTable map[string]float64) {
 	for _, residue := range p.Residue {
 		for _, atom := range residue.Atoms {
@@ -120,6 +130,7 @@ func (p *Protein) UpdateMasses(massTable map[string]float64) {
 	}
 }
 
+// the mass table for the common atoms in protein
 var massTable = map[string]float64{
 	"H": 1.0079,
 	"C": 12.0107,
@@ -129,10 +140,41 @@ var massTable = map[string]float64{
 	// Add more elements as needed
 }
 
-// /////////////////
-// ////////////////
 // ///////////////
 // ////These function are used for read parameter for MDsimulation
+// ///////////////
+
+// **** highest level function ****
+// Function ReadParameterFile take a filePath as example
+// and return parameterDatabase that contains the information between each atom pairs
+func ReadParameterFile(filePath string) (parameterDatabase, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return parameterDatabase{}, err
+	}
+	defer file.Close()
+
+	var pairs parameterDatabase
+	Firstline, _ := GetFirstLine(filePath)
+	funcPosition, len, _ := FindPosition(Firstline)
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		pair, err := ParseParameterPairLine(line, funcPosition, len)
+		if err != nil {
+			continue
+		}
+		pairPointer := &pair
+		pairs.atomPair = append(pairs.atomPair, pairPointer)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return parameterDatabase{}, err
+	}
+
+	return pairs, nil
+}
 
 // Function to parse a single line and return a parameterPair struct
 func ParseParameterPairLine(line string, funcPosition, length int) (parameterPair, error) {
@@ -173,37 +215,7 @@ func ParseParameterPairLine(line string, funcPosition, length int) (parameterPai
 	return pair, nil
 }
 
-// Function to read the entire file and parse each line into a slice of parameterPair structs
-func ReadParameterFile(filePath string) (parameterDatabase, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return parameterDatabase{}, err
-	}
-	defer file.Close()
-
-	var pairs parameterDatabase
-	Firstline, _ := GetFirstLine(filePath)
-	funcPosition, len, _ := FindPosition(Firstline)
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		pair, err := ParseParameterPairLine(line, funcPosition, len)
-		if err != nil {
-			continue
-		}
-		pairPointer := &pair
-		pairs.atomPair = append(pairs.atomPair, pairPointer)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return parameterDatabase{}, err
-	}
-
-	return pairs, nil
-}
-
-// Function to read the entire file and parse each line into a slice of parameterPair structs
+// Function FindPosition to judge the length of the parameter and the position of func
 func FindPosition(line string) (int, int, error) {
 	// Check if the line starts with ";"
 	if !strings.HasPrefix(line, ";") {
@@ -225,6 +237,7 @@ func FindPosition(line string) (int, int, error) {
 	return -1, 0, fmt.Errorf("'func' not found in the line")
 }
 
+// function GetFirstLine used to retrive the first line of a file
 func GetFirstLine(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -242,18 +255,23 @@ func GetFirstLine(filePath string) (string, error) {
 	return "", fmt.Errorf("file does not have any lines")
 }
 
-// // This part read the aminoacids.rtp
+// ///////////////
+// ////These function are used for read parameter for aminoacids.rtp
+// ///////////////
+
+// ****highest level function****
 func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-
+	//creata a map for residueParameter
 	residues := make(map[string]residueParameter)
 	var currentResidue *residueParameter
 	section := ""
 
+	// scan the line of the file
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -274,7 +292,8 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 		if currentResidue == nil {
 			continue
 		}
-
+		// append the information we need for the residueParameter
+		//atoms,bonds,angles,dihedrals
 		switch section {
 		case "atoms":
 			parts := strings.Fields(line)
@@ -322,6 +341,10 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 	return residues, nil
 }
 
+// ///////////////
+// ////These function are used for read parameter for charge
+// ///////////////
+// ****highest level function****
 func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -389,4 +412,30 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 	}
 
 	return chargeData, nil
+}
+
+func TemporaryPlot(RMSD []float64) {
+	p := plot.New()
+
+	p.Title.Text = "Plot Example"
+	p.X.Label.Text = "X"
+	p.Y.Label.Text = "Y"
+
+	points := make(plotter.XYs, len(RMSD))
+	for i := range points {
+		points[i].X = float64(i)
+		points[i].Y = RMSD[i]
+	}
+
+	s, err := plotter.NewScatter(points)
+	if err != nil {
+		panic(err)
+	}
+
+	p.Add(s)
+
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "scatter.png"); err != nil {
+		panic(err)
+	}
+
 }
