@@ -33,17 +33,17 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 										continue
 									}
 									for r > float64(tolerance) {
-										correction := (r - r0) / 2
+										correction := (r - r0*10) / 2
 										if math.IsNaN(correction / r) {
 											continue
 										}
-										p.Residue[q].Atoms[i].position.x += (atom1.position.x - atom2.position.x) * correction / r
-										p.Residue[q].Atoms[i].position.y += (atom1.position.y - atom2.position.y) * correction / r
-										p.Residue[q].Atoms[i].position.z += (atom1.position.z - atom2.position.z) * correction / r
+										p.Residue[q].Atoms[i].position.x += (atom2.position.x - atom1.position.x) * correction
+										p.Residue[q].Atoms[i].position.y += (atom2.position.y - atom1.position.y) * correction
+										p.Residue[q].Atoms[i].position.z += (atom2.position.z - atom1.position.z) * correction
 
-										p.Residue[q].Atoms[j].position.x += (atom2.position.x - atom1.position.x) * correction / r
-										p.Residue[q].Atoms[j].position.y += (atom2.position.y - atom1.position.y) * correction / r
-										p.Residue[q].Atoms[j].position.z += (atom2.position.z - atom1.position.z) * correction / r
+										p.Residue[q].Atoms[j].position.x += (atom1.position.x - atom2.position.x) * correction
+										p.Residue[q].Atoms[j].position.y += (atom1.position.y - atom2.position.y) * correction
+										p.Residue[q].Atoms[j].position.z += (atom1.position.z - atom2.position.z) * correction
 										coverage = false
 
 										fmt.Println(p.Residue[q].Atoms[j].position)
