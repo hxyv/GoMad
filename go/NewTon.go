@@ -10,13 +10,14 @@ import (
 // Output: a slice of numGens + 1 Universes resulting from simulating gravity over numGens generations, where the time interval between generations is specified by time.
 func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
 	timePoints := make([]Protein, 0)
-	cerition := 10000.0
+	cerition := 1000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 50
+	iteration := 1000
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
+
 		totalTime += time
 		if totalTime > cerition {
 			break
@@ -34,13 +35,16 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 
 	energy, forceMap := CalculateTotalEnergyForce(newProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 	forceIndex := 0
-
+	//fmt.Println(forceMap[forceIndex])
 	// range and update every body in universe
+	fmt.Println("energy")
+	fmt.Println(energy)
 	for i, b := range newProtein.Residue {
 		for j, a := range b.Atoms {
 			_, exist := forceMap[forceIndex]
 
 			if exist {
+
 				oldAcceleration, oldVelocity := a.accelerated, a.velocity // OK :)
 				newProtein.Residue[i].Atoms[j].accelerated = UpdateAcceleration(forceMap[forceIndex], a)
 				newProtein.Residue[i].Atoms[j].velocity = UpdateVelocity(a, oldAcceleration, time)
@@ -51,6 +55,8 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 		}
 
 	}
+
+	//AddSimpleBondConstraints(newProtein, bondParameter, residueParameterValue)
 
 	return *newProtein, energy
 }
@@ -98,12 +104,14 @@ func UpdateAcceleration(force *TriTuple, a *Atom) TriTuple {
 
 func CalculateRMSD(timePoints []Protein) []float64 {
 	var RMSDValue []float64
+
 	for i := 1; i < len(timePoints); i++ {
 		length := 0.0
 		value := 0.0
 		for j := range timePoints[i].Residue {
 			for k := range timePoints[i].Residue[j].Atoms {
 				dis := Distance(timePoints[0].Residue[j].Atoms[k].position, timePoints[i].Residue[j].Atoms[k].position)
+
 				value += dis * dis
 				length += 1.0
 			}
