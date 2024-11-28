@@ -87,7 +87,7 @@ func UpdatePosition(a *Atom, oldAcceleration, oldVelocity TriTuple, time float64
 func UpdateAcceleration(force *TriTuple, a *Atom) TriTuple {
 	var accel TriTuple
 
-	// thank u Newton for telling us F = m * a or a = F/m
+	// F = m * a or a = F/m according to Newton law
 	accel.x = force.x / a.mass
 	accel.y = force.y / a.mass
 	accel.z = force.z / a.mass
