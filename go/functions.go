@@ -76,7 +76,7 @@ func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
 
-	iteration := 5
+	iteration := 1000
 	// set maximum displacement
 	h := 0.01
 
