@@ -95,40 +95,40 @@ func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]
 	}
 }
 
-func CalculateTotalUnbondEnergy(atoms []*Atom, verletList *VerletList) map[int]float64 {
+func CalculateTotalUnbondEnergy(p *Protein, nonbondedParameter parameterDatabase) map[int]float64 {
 	energyMap := make(map[int]float64)
+	verletList := NewVerletList()
+	verletList.BuildVerlet(p)
 
-	for _, atom1 := range atoms {
-		// Initialize energy for atom1
-		energyMap[atom1.index] = 0.0
+	for _, residue := range p.Residue {
+		for _, atom1 := range residue.Atoms {
+			// Initialize energy for atom1
+			energyMap[atom1.index] = 0.0
 
-		// Access the Neighbors map using the dereferenced verletList
-		neighbors, exists := verletList.Neighbors[atom1]
-		if !exists {
-			continue
-		}
+			// Access the Neighbors map using the dereferenced verletList
+			neighbors, exists := verletList.Neighbors[atom1]
+			if !exists {
+				continue
+			}
 
-		for _, atom2 := range neighbors {
-			// Compute the distance between atom1 and atom2
-			r := Distance(atom1.position, atom2.position)
+			for _, atom2 := range neighbors {
+				// Compute the distance between atom1 and atom2
+				r := Distance(atom1.position, atom2.position)
 
-			// Calculate the electric potential energy between atom1 and atom2
-			electricPotentialEnergy := CalculateElectricPotentialEnergy(atom1, atom2, r)
-
-			// Update the energy map for atom1
-			energyMap[atom1.index] += electricPotentialEnergy
-
-			nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
-			Check(error)
-
-			parameterList := SearchParameter(2, nonbondedParameter, atom1, atom2)
-			if len(parameterList) != 1 {
 				// Calculate the electric potential energy between atom1 and atom2
-				LJPotentialEnergy := CalculateLJPotentialEnergy(parameterList[0], parameterList[1], r)
+				electricPotentialEnergy := CalculateElectricPotentialEnergy(atom1, atom2, r)
 
 				// Update the energy map for atom1
-				energyMap[atom1.index] += LJPotentialEnergy
+				energyMap[atom1.index] += electricPotentialEnergy
 
+				// Calculate the Lennard-Jones potential energy between atom1 and atom2
+				parameterList := SearchParameter(2, nonbondedParameter, atom1, atom2)
+				if len(parameterList) == 2 {
+					LJPotentialEnergy := CalculateLJPotentialEnergy(parameterList[0], parameterList[1], r)
+
+					// Update the energy map for atom1
+					energyMap[atom1.index] += LJPotentialEnergy
+				}
 			}
 		}
 	}
