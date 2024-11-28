@@ -14,7 +14,7 @@ func CalculateAnglePotentialEnergy(k, theta, theta_0 float64) float64 {
 }
 
 func CalculateProperDihedralAngleEnergy(kd, phi, pn, phase float64) float64 {
-	return 0.5 * kd * (1 + math.Cos(pn*phi-phase))
+	return 0.5 * kd * (1 + math.Cos(pn*phi-phase/360*math.Pi))
 }
 
 func CalculateAngle(atom1, atom2, atom3 *Atom) float64 {
@@ -140,9 +140,16 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							if len(parameterList) != 1 {
 
 								force := CalculateBondForce(parameterList[1], r*0.1, parameterList[0], atom1, atom2)
-								if force.x > 200 || force.x < -200 {
+								if force.x > 100 || force.x < -100 {
 									continue
 								}
+								if force.y > 100 || force.y < -100 {
+									continue
+								}
+								if force.z > 100 || force.z < -100 {
+									continue
+								}
+
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r*0.1, parameterList[0])
 
 								_, exist := forceMap[i]
@@ -197,7 +204,15 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 										force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
 
-										if force_i.x > 200 || force_i.x < -200 {
+										if force_i.x > 100 || force_i.x < -100 {
+											continue
+										}
+
+										if force_i.y > 100 || force_i.y < -100 {
+											continue
+										}
+
+										if force_i.z > 100 || force_i.z < -100 {
 											continue
 										}
 										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
@@ -270,7 +285,14 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 												force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
-												if force_i.x > 200 || force_i.x < -200 {
+												if force_i.x > 100 || force_i.x < -100 {
+													continue
+												}
+												if force_i.y > 100 || force_i.y < -100 {
+													continue
+												}
+
+												if force_i.z > 100 || force_i.z < -100 {
 													continue
 												}
 												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
@@ -361,7 +383,13 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 						if len(parameterList) != 1 {
 							force := CalculateBondForce(parameterList[1], r*0.1, parameterList[0], atom1, atom2)
-							if force.x > 200 || force.x < -200 {
+							if force.x > 100 || force.x < -100 {
+								continue
+							}
+							if force.y > 100 || force.y < -100 {
+								continue
+							}
+							if force.z > 100 || force.z < -100 {
 								continue
 							}
 							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r*0.1, parameterList[0])
@@ -422,7 +450,14 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
-									if force_i.x > 200 || force_i.x < -200 {
+									if force_i.x > 100 || force_i.x < -100 {
+										continue
+									}
+									if force_i.y > 100 || force_i.y < -100 {
+										continue
+									}
+
+									if force_i.z > 100 || force_i.z < -100 {
 										continue
 									}
 									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
@@ -492,7 +527,14 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						if len(parameterList) != 1 {
 
 							force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
-							if force_i.x > 200 || force_i.x < -200 {
+							if force_i.x > 100 || force_i.x < -100 {
+								continue
+							}
+							if force_i.y > 100 || force_i.y < -100 {
+								continue
+							}
+
+							if force_i.z > 100 || force_i.z < -100 {
 								continue
 							}
 							angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
@@ -565,7 +607,14 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
-									if force_i.x > 200 || force_i.x < -200 {
+									if force_i.x > 100 || force_i.x < -100 {
+										continue
+									}
+									if force_i.y > 100 || force_i.y < -100 {
+										continue
+									}
+
+									if force_i.z > 100 || force_i.z < -100 {
 										continue
 									}
 									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
@@ -699,9 +748,8 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 }
 
 func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (TriTuple, TriTuple, TriTuple) {
-	der_that_cos := (-1) * (1 / math.Sin(theta))
-	der_U_thate := k * (theta/360 - theta_0/360) * math.Pi
-	theta = theta / 360 * math.Pi
+	der_that_cos := (-1) * (1 / math.Sin(theta/360*math.Pi))
+	der_U_thate := k * (theta - theta_0) / 360 * math.Pi
 
 	if math.IsNaN(der_that_cos) {
 		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
@@ -754,7 +802,7 @@ func DerivateAnglePositionZ(atom1, atom2, atom3 *Atom, theta float64) float64 {
 }
 
 func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, atom3, atom4 *Atom) (TriTuple, TriTuple, TriTuple, TriTuple) {
-	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase))
+	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase/360*math.Pi))
 	der_phi_cos := -1 / math.Sin(phi)
 
 	vector12 := CalculateVector(atom1, atom2)
@@ -794,6 +842,7 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	if force_i.x > 100 {
 		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
 	}
+
 	return force_i, force_j, force_k, force_l
 
 }
@@ -862,9 +911,9 @@ func CopyTriTuple(tri TriTuple) TriTuple {
 
 func CalculateVector(atom1, atom2 *Atom) TriTuple {
 	var vector TriTuple
-	vector.x = atom2.position.x - atom1.position.x
-	vector.y = atom2.position.y - atom1.position.y
-	vector.z = atom2.position.z - atom1.position.z
+	vector.x = (atom2.position.x - atom1.position.x) * 0.1
+	vector.y = (atom2.position.y - atom1.position.y) * 0.1
+	vector.z = (atom2.position.z - atom1.position.z) * 0.1
 
 	return vector
 }
