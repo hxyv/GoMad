@@ -12,10 +12,9 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-// /////////////////
-// ////////////////
 // ///////////////
 // ////These function are used for read protein from PDB
+// ///////////////
 
 // readProteinFromFile take a fileName as example
 // return the Protein structure using the informtion of file
@@ -129,6 +128,7 @@ func (p *Protein) UpdateMasses(massTable map[string]float64) {
 	}
 }
 
+// the mass table for the common atoms in protein
 var massTable = map[string]float64{
 	"H": 1.0079,
 	"C": 12.0107,
@@ -138,10 +138,41 @@ var massTable = map[string]float64{
 	// Add more elements as needed
 }
 
-// /////////////////
-// ////////////////
 // ///////////////
 // ////These function are used for read parameter for MDsimulation
+// ///////////////
+
+// **** highest level function ****
+// Function ReadParameterFile take a filePath as example
+// and return parameterDatabase that contains the information between each atom pairs
+func ReadParameterFile(filePath string) (parameterDatabase, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return parameterDatabase{}, err
+	}
+	defer file.Close()
+
+	var pairs parameterDatabase
+	Firstline, _ := GetFirstLine(filePath)
+	funcPosition, len, _ := FindPosition(Firstline)
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		pair, err := ParseParameterPairLine(line, funcPosition, len)
+		if err != nil {
+			continue
+		}
+		pairPointer := &pair
+		pairs.atomPair = append(pairs.atomPair, pairPointer)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return parameterDatabase{}, err
+	}
+
+	return pairs, nil
+}
 
 // Function to parse a single line and return a parameterPair struct
 func ParseParameterPairLine(line string, funcPosition, length int) (parameterPair, error) {
@@ -182,37 +213,7 @@ func ParseParameterPairLine(line string, funcPosition, length int) (parameterPai
 	return pair, nil
 }
 
-// Function to read the entire file and parse each line into a slice of parameterPair structs
-func ReadParameterFile(filePath string) (parameterDatabase, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return parameterDatabase{}, err
-	}
-	defer file.Close()
-
-	var pairs parameterDatabase
-	Firstline, _ := GetFirstLine(filePath)
-	funcPosition, len, _ := FindPosition(Firstline)
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		pair, err := ParseParameterPairLine(line, funcPosition, len)
-		if err != nil {
-			continue
-		}
-		pairPointer := &pair
-		pairs.atomPair = append(pairs.atomPair, pairPointer)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return parameterDatabase{}, err
-	}
-
-	return pairs, nil
-}
-
-// Function to read the entire file and parse each line into a slice of parameterPair structs
+// Function FindPosition to judge the length of the parameter and the position of func
 func FindPosition(line string) (int, int, error) {
 	// Check if the line starts with ";"
 	if !strings.HasPrefix(line, ";") {
@@ -234,6 +235,7 @@ func FindPosition(line string) (int, int, error) {
 	return -1, 0, fmt.Errorf("'func' not found in the line")
 }
 
+// function GetFirstLine used to retrive the first line of a file
 func GetFirstLine(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -251,18 +253,23 @@ func GetFirstLine(filePath string) (string, error) {
 	return "", fmt.Errorf("file does not have any lines")
 }
 
-// // This part read the aminoacids.rtp
+// ///////////////
+// ////These function are used for read parameter for aminoacids.rtp
+// ///////////////
+
+// ****highest level function****
 func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-
+	//creata a map for residueParameter
 	residues := make(map[string]residueParameter)
 	var currentResidue *residueParameter
 	section := ""
 
+	// scan the line of the file
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -283,7 +290,8 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 		if currentResidue == nil {
 			continue
 		}
-
+		// append the information we need for the residueParameter
+		//atoms,bonds,angles,dihedrals
 		switch section {
 		case "atoms":
 			parts := strings.Fields(line)
@@ -331,6 +339,10 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 	return residues, nil
 }
 
+// ///////////////
+// ////These function are used for read parameter for charge
+// ///////////////
+// ****highest level function****
 func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -424,4 +436,49 @@ func TemporaryPlot(RMSD []float64) {
 		panic(err)
 	}
 
+}
+
+// function WriteProteinToPDB takes a protein structure as input
+// return a pdb file
+func WriteProteinToPDB(protein *Protein, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+
+	// Write the title section
+	if _, err := writer.WriteString(fmt.Sprintf("HEADER    %s\n", protein.Name)); err != nil {
+		return err
+	}
+
+	atomIndex := 1
+	for _, residue := range protein.Residue {
+		for _, atom := range residue.Atoms {
+			// Format atom data according to the PDB file format
+			_, err := writer.WriteString(fmt.Sprintf(
+				"ATOM  %5d %-4s %3s %1s%4d    %8.3f%8.3f%8.3f  1.00  0.00          %-2s\n",
+				atomIndex,                                         // Atom serial number
+				atom.element,                                      // Atom name
+				residue.Name,                                      // Residue name
+				residue.ChainID,                                   // Chain identifier
+				residue.ID,                                        // Residue sequence number
+				atom.position.x, atom.position.y, atom.position.z, // Atom coordinates
+				atom.element, // Element symbol
+			))
+			if err != nil {
+				return err
+			}
+			atomIndex++
+		}
+	}
+
+	// Write the termination line
+	if _, err := writer.WriteString("END\n"); err != nil {
+		return err
+	}
+
+	return writer.Flush()
 }

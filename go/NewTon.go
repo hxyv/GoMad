@@ -13,7 +13,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 	cerition := 1000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 10
+	iteration := 1000
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
