@@ -6,6 +6,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
 // ///////////////
@@ -411,8 +415,6 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 
 	return chargeData, nil
 }
-<<<<<<< HEAD
-=======
 
 func TemporaryPlot(RMSD []float64) {
 	p := plot.New()
@@ -439,4 +441,3 @@ func TemporaryPlot(RMSD []float64) {
 	}
 
 }
->>>>>>> upstream/main
