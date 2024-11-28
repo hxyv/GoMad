@@ -34,7 +34,7 @@ func main() {
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RSMD := CalculateRMSD(timepoints)
 	TemporaryPlot(RSMD)
-	WriteProteinToPDB(&protein, "output.pdb")
+	WriteProteinToPDB(&timepoints[len(timepoints)-1], "output.pdb")
 }
 
 func Check(err error) {

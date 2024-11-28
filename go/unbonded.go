@@ -15,7 +15,7 @@ func CalculateElectricPotentialEnergy(a1, a2 *Atom, r float64) float64 {
 // A: coefficient 1
 // B: coefficient 2
 // r: distance between atom 1 and atom 2
-func CalculateLJPotentialEnergy(A, B, r float64) float64 {
+func CalculateLJPotentialEnergy(B, A, r float64) float64 {
 	r_6 := math.Pow(r, 6)
 	r_12 := r_6 * r_6
 
@@ -28,7 +28,7 @@ func CalculateLJForce(A, B, r float64) float64 {
 	r_6 := math.Pow(r, 6)
 	r_12 := r_6 * r_6
 
-	return (A / r_6) - (B / r_12)
+	return (A / r_12) - (B / r_6)
 }
 
 // C: coefficient 1
@@ -113,10 +113,23 @@ func CalculateTotalUnbondEnergy(atoms []*Atom, verletList *VerletList) map[int]f
 			r := Distance(atom1.position, atom2.position)
 
 			// Calculate the electric potential energy between atom1 and atom2
-			energy := CalculateElectricPotentialEnergy(atom1, atom2, r)
+			electricPotentialEnergy := CalculateElectricPotentialEnergy(atom1, atom2, r)
 
 			// Update the energy map for atom1
-			energyMap[atom1.index] += energy
+			energyMap[atom1.index] += electricPotentialEnergy
+
+			nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+			Check(error)
+
+			parameterList := SearchParameter(2, nonbondedParameter, atom1, atom2)
+			if len(parameterList) != 1 {
+				// Calculate the electric potential energy between atom1 and atom2
+				LJPotentialEnergy := CalculateLJPotentialEnergy(parameterList[0], parameterList[1], r)
+
+				// Update the energy map for atom1
+				energyMap[atom1.index] += LJPotentialEnergy
+
+			}
 		}
 	}
 
