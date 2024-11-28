@@ -17,40 +17,8 @@ import (
 // ///////////////
 // ////These function are used for read protein from PDB
 
-// Function to parse a PDB line based on spaces
-func parsePDBLine(line string) (Atom, string, error) {
-	fields := strings.Fields(line)
-	var atom Atom
-
-	// Parse coordinates
-	x, err := strconv.ParseFloat(fields[6], 64)
-	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing x position: %v", err)
-	}
-	y, err := strconv.ParseFloat(fields[7], 64)
-	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing y position: %v", err)
-	}
-	z, err := strconv.ParseFloat(fields[8], 64)
-	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing z position: %v", err)
-	}
-
-	// Parse element symbol
-	element := fields[2]
-	index, _ := strconv.Atoi(fields[1])
-	// pass value to atom object
-	atom.position.x = x
-	atom.position.y = y
-	atom.position.z = z
-	atom.element = element
-	atom.index = index
-	// Extract residue name
-	residueName := fields[3]
-
-	return atom, residueName, nil
-}
-
+// readProteinFromFile take a fileName as example
+// return the Protein structure using the informtion of file
 func readProteinFromFile(fileName string) (Protein, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -68,7 +36,7 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 		// Process lines that start with "ATOM"
 		if strings.HasPrefix(line, "ATOM") {
-			atom, residueName, err := parsePDBLine(line)
+			atom, residueName, ChainID, err := parsePDBLine(line)
 			if err != nil {
 				return Protein{}, err
 			}
@@ -82,8 +50,9 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 				// otherwise,Create a new Residue object
 				currentResidue = &Residue{
-					Name:  residueName,
-					Atoms: []*Atom{&atom},
+					Name:    residueName,
+					ChainID: ChainID,
+					Atoms:   []*Atom{&atom},
 				}
 			} else {
 				// If it's the same residue, add the atom to the current residue
@@ -103,9 +72,45 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 	// Set the residues in the protein
 	protein.Residue = residues
+	// upload weight of each atoms
 	protein.UpdateMasses(massTable)
 
 	return protein, nil
+}
+
+// Function to parse a PDB line based on spaces
+func parsePDBLine(line string) (Atom, string, string, error) {
+	fields := strings.Fields(line)
+	var atom Atom
+
+	// Parse coordinates
+	x, err := strconv.ParseFloat(fields[6], 64)
+	if err != nil {
+		return Atom{}, "", "", fmt.Errorf("error parsing x position: %v", err)
+	}
+	y, err := strconv.ParseFloat(fields[7], 64)
+	if err != nil {
+		return Atom{}, "", "", fmt.Errorf("error parsing y position: %v", err)
+	}
+	z, err := strconv.ParseFloat(fields[8], 64)
+	if err != nil {
+		return Atom{}, "", "", fmt.Errorf("error parsing z position: %v", err)
+	}
+
+	// Parse element symbol
+	element := fields[2]
+	ChainID := fields[4]
+	index, _ := strconv.Atoi(fields[1])
+	// pass value to atom object
+	atom.position.x = x
+	atom.position.y = y
+	atom.position.z = z
+	atom.element = element
+	atom.index = index
+	// Extract residue name
+	residueName := fields[3]
+
+	return atom, residueName, ChainID, nil
 }
 
 func (p *Protein) UpdateMasses(massTable map[string]float64) {
