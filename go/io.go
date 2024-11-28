@@ -33,7 +33,7 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 		// Process lines that start with "ATOM"
 		if strings.HasPrefix(line, "ATOM") {
-			atom, residueName, err := parsePDBLine(line)
+			atom, residueName, ChainID, err := parsePDBLine(line)
 			if err != nil {
 				return Protein{}, err
 			}
@@ -47,8 +47,9 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 				// otherwise,Create a new Residue object
 				currentResidue = &Residue{
-					Name:  residueName,
-					Atoms: []*Atom{&atom},
+					Name:    residueName,
+					ChainID: ChainID,
+					Atoms:   []*Atom{&atom},
 				}
 			} else {
 				// If it's the same residue, add the atom to the current residue
@@ -75,26 +76,27 @@ func readProteinFromFile(fileName string) (Protein, error) {
 }
 
 // Function to parse a PDB line based on spaces
-func parsePDBLine(line string) (Atom, string, error) {
+func parsePDBLine(line string) (Atom, string, string, error) {
 	fields := strings.Fields(line)
 	var atom Atom
 
 	// Parse coordinates
 	x, err := strconv.ParseFloat(fields[6], 64)
 	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing x position: %v", err)
+		return Atom{}, "", "", fmt.Errorf("error parsing x position: %v", err)
 	}
 	y, err := strconv.ParseFloat(fields[7], 64)
 	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing y position: %v", err)
+		return Atom{}, "", "", fmt.Errorf("error parsing y position: %v", err)
 	}
 	z, err := strconv.ParseFloat(fields[8], 64)
 	if err != nil {
-		return Atom{}, "", fmt.Errorf("error parsing z position: %v", err)
+		return Atom{}, "", "", fmt.Errorf("error parsing z position: %v", err)
 	}
 
 	// Parse element symbol
 	element := fields[2]
+	ChainID := fields[4]
 	index, _ := strconv.Atoi(fields[1])
 	// pass value to atom object
 	atom.position.x = x
@@ -105,7 +107,7 @@ func parsePDBLine(line string) (Atom, string, error) {
 	// Extract residue name
 	residueName := fields[3]
 
-	return atom, residueName, nil
+	return atom, residueName, ChainID, nil
 }
 
 // func UpdateMasses take a massTable and a protein structure as inpue
