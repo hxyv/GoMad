@@ -10,10 +10,10 @@ import (
 // Output: a slice of numGens + 1 Universes resulting from simulating gravity over numGens generations, where the time interval between generations is specified by time.
 func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
 	timePoints := make([]Protein, 0)
-	cerition := 1000.0
+	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 1000
+	iteration := 50
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
@@ -42,7 +42,7 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 			_, exist := forceMap[forceIndex]
 
 			if exist {
-				//fmt.Println(forceMap[forceIndex])
+				fmt.Println(forceMap[forceIndex])
 				oldAcceleration, oldVelocity := a.accelerated, a.velocity // OK :)
 				newProtein.Residue[i].Atoms[j].accelerated = UpdateAcceleration(forceMap[forceIndex], a)
 				newProtein.Residue[i].Atoms[j].velocity = UpdateVelocity(a, oldAcceleration, time)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -76,7 +75,7 @@ func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
 
-	iteration := 1000
+	iteration := 10
 	// set maximum displacement
 	h := 0.01
 
@@ -215,6 +214,18 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 										if force_i.z > 100 || force_i.z < -100 {
 											continue
 										}
+
+										if force_j.x > 100 || force_j.x < -100 {
+											continue
+										}
+
+										if force_j.y > 100 || force_j.y < -100 {
+											continue
+										}
+
+										if force_j.z > 100 || force_j.z < -100 {
+											continue
+										}
 										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
 										_, exist := forceMap[i]
 										if exist {
@@ -293,6 +304,18 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 												}
 
 												if force_i.z > 100 || force_i.z < -100 {
+													continue
+												}
+
+												if force_j.x > 100 || force_j.x < -100 {
+													continue
+												}
+
+												if force_j.y > 100 || force_j.y < -100 {
+													continue
+												}
+
+												if force_j.z > 100 || force_j.z < -100 {
 													continue
 												}
 												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
@@ -445,7 +468,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							if p.Residue[m+1].Atoms[h].element[0] == 'H' {
 								atom3 := p.Residue[m+1].Atoms[h]
 								theta := CalculateAngle(atom1, atom2, atom3)
-								fmt.Println(theta)
+
 								parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
 								if len(parameterList) != 1 {
 
@@ -458,6 +481,18 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 									}
 
 									if force_i.z > 100 || force_i.z < -100 {
+										continue
+									}
+
+									if force_j.x > 100 || force_j.x < -100 {
+										continue
+									}
+
+									if force_j.y > 100 || force_j.y < -100 {
+										continue
+									}
+
+									if force_j.z > 100 || force_j.z < -100 {
 										continue
 									}
 									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
@@ -535,6 +570,17 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							}
 
 							if force_i.z > 100 || force_i.z < -100 {
+								continue
+							}
+							if force_j.x > 100 || force_j.x < -100 {
+								continue
+							}
+
+							if force_j.y > 100 || force_j.y < -100 {
+								continue
+							}
+
+							if force_j.z > 100 || force_j.z < -100 {
 								continue
 							}
 							angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
@@ -615,6 +661,17 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 									}
 
 									if force_i.z > 100 || force_i.z < -100 {
+										continue
+									}
+									if force_j.x > 100 || force_j.x < -100 {
+										continue
+									}
+
+									if force_j.y > 100 || force_j.y < -100 {
+										continue
+									}
+
+									if force_j.z > 100 || force_j.z < -100 {
 										continue
 									}
 									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
@@ -738,11 +795,13 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 	}
 
 	fScale := k * (r - r_0)
+
 	force := TriTuple{
-		x: fScale * unitVector.x,
-		y: fScale * unitVector.y,
-		z: fScale * unitVector.z,
+		x: fScale * unitVector.x * 10 / (6 * math.Pow10(23)),
+		y: fScale * unitVector.y * 10 / (6 * math.Pow10(23)),
+		z: fScale * unitVector.z * 10 / (6 * math.Pow10(23)),
 	}
+
 	return force
 
 }
@@ -764,15 +823,15 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 	der_theta_z_32 := DerivateAnglePositionZ(atom3, atom2, atom1, theta)
 
 	force_i := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_12,
-		y: der_U_thate * der_that_cos * der_theta_y_12,
-		z: der_U_thate * der_that_cos * der_theta_z_12,
+		x: der_U_thate * der_that_cos * der_theta_x_12 * 10 / (6 * math.Pow10(23)),
+		y: der_U_thate * der_that_cos * der_theta_y_12 * 10 / (6 * math.Pow10(23)),
+		z: der_U_thate * der_that_cos * der_theta_z_12 * 10 / (6 * math.Pow10(23)),
 	}
 
 	force_k := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_32,
-		y: der_U_thate * der_that_cos * der_theta_y_32,
-		z: der_U_thate * der_that_cos * der_theta_z_32,
+		x: der_U_thate * der_that_cos * der_theta_x_32 * 10 / (6 * math.Pow10(23)),
+		y: der_U_thate * der_that_cos * der_theta_y_32 * 10 / (6 * math.Pow10(23)),
+		z: der_U_thate * der_that_cos * der_theta_z_32 * 10 / (6 * math.Pow10(23)),
 	}
 
 	force_j := TriTuple{
@@ -816,27 +875,27 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	der_cos_ux, der_cos_uy, der_cos_uz := CalculateDerivate(v_u, v_t, phi)
 
 	force_i := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) * 10 / (6 * math.Pow10(23)),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) * 10 / (6 * math.Pow10(23)),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) * 10 / (6 * math.Pow10(23)),
 	}
 
 	force_j := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) * 10 / (6 * math.Pow10(23)),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) * 10 / (6 * math.Pow10(23)),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) * 10 / (6 * math.Pow10(23)),
 	}
 
 	force_k := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) * 10 / (6 * math.Pow10(23)),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) * 10 / (6 * math.Pow10(23)),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) * 10 / (6 * math.Pow10(23)),
 	}
 
 	force_l := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y),
-		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z),
-		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x),
+		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) * 10 / (6 * math.Pow10(23)),
+		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) * 10 / (6 * math.Pow10(23)),
+		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) * 10 / (6 * math.Pow10(23)),
 	}
 
 	if force_i.x > 100 {
