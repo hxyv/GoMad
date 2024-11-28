@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -481,4 +483,26 @@ func WriteProteinToPDB(protein *Protein, filename string) error {
 	}
 
 	return writer.Flush()
+}
+
+// writeRMSD writes a slice of float64 values to a CSV file.
+func writeRMSD(slice []float64) error {
+	// Open the file for writing
+	outFile, err := os.Create("result/RMSD.csv")
+	if err != nil {
+		log.Fatalf("Failed to create output file: %v", err)
+	}
+	defer outFile.Close()
+
+	writer := csv.NewWriter(outFile)
+	defer writer.Flush()
+
+	for i, value := range slice {
+		err := writer.Write([]string{strconv.Itoa(i), strconv.FormatFloat(value, 'f', 2, 64)})
+		if err != nil {
+			log.Fatalf("Failed to write to output file: %v", err)
+		}
+	}
+
+	return nil
 }
