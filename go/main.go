@@ -7,13 +7,9 @@ import (
 )
 
 func main() {
-	/*
-		secline, err := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
-		Check(err)
-		//fmt.Println(secline.atomPair)
-		printParameterDatabase(&secline)
-	*/
 	protein, err := readProteinFromFile("../data/calmodulin_noCA.pdb")
+	fmt.Println(len(protein.Residue))
+	Check(err)
 
 	// Parse the charge data file
 	chargeData, err := parseChargeFile("../data/gromacs43_atom_charge.rtp")
@@ -23,8 +19,9 @@ func main() {
 	}
 
 	// Assign charges to the protein's atoms
-	(&protein).assignChargesToProtein(chargeData)
+	(&protein).AssignChargesToProtein(chargeData)
 
+<<<<<<< HEAD
 	// Print out the charges to verify
 	/*
 		for _, residue := range protein.Residue {
@@ -36,6 +33,25 @@ func main() {
 	*/
 	fmt.Println((&protein).Residue[0].ChainID)
 	WriteProteinToPDB(&protein, "result/output.pdb")
+=======
+	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+	time := 0.0000001
+	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+	RSMD := CalculateRMSD(timepoints)
+	TemporaryPlot(RSMD)
+>>>>>>> upstream/main
 }
 
 func Check(err error) {
@@ -60,6 +76,7 @@ func printParameterDatabase(db *parameterDatabase) {
 	}
 }
 
+<<<<<<< HEAD
 // function WriteProteinToPDB takes a protein structure as input
 // return a pdb file
 func WriteProteinToPDB(protein *Protein, filename string) error {
@@ -103,4 +120,15 @@ func WriteProteinToPDB(protein *Protein, filename string) error {
 	}
 
 	return writer.Flush()
+=======
+func printProtein(protein *Protein) {
+	fmt.Printf("Protein Name: %s\n", protein.Name)
+	for _, residue := range protein.Residue {
+		fmt.Printf("  Residue Name: %s, ID: %d, ChainID: %s\n", residue.Name, residue.ID, residue.ChainID)
+		for _, atom := range residue.Atoms {
+			fmt.Printf("    Atom Index: %d, Element: %s, Position: (%.2f, %.2f, %.2f)\n",
+				atom.index, atom.element, atom.position.x, atom.position.y, atom.position.z)
+		}
+	}
+>>>>>>> upstream/main
 }
