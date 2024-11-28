@@ -30,7 +30,7 @@ func main() {
 	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
 	Check(error)
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-	time := 0.0000001
+	time := 10.0
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RSMD := CalculateRMSD(timepoints)
 	TemporaryPlot(RSMD)
