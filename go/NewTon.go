@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -13,7 +12,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 50
+	iteration := 5000
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
@@ -35,14 +34,15 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 
 	energy, forceMap := CalculateTotalEnergyForce(newProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 	forceIndex := 0
-	//fmt.Println(forceMap[forceIndex])
+
 	// range and update every body in universe
 	for i, b := range newProtein.Residue {
 		for j, a := range b.Atoms {
 			_, exist := forceMap[forceIndex]
 
 			if exist {
-				fmt.Println(forceMap[forceIndex])
+
+				//fmt.Println(forceMap[forceIndex])
 				oldAcceleration, oldVelocity := a.accelerated, a.velocity // OK :)
 				newProtein.Residue[i].Atoms[j].accelerated = UpdateAcceleration(forceMap[forceIndex], a)
 				newProtein.Residue[i].Atoms[j].velocity = UpdateVelocity(a, oldAcceleration, time)
@@ -115,7 +115,7 @@ func CalculateRMSD(timePoints []Protein) []float64 {
 			}
 		}
 		RMSDValue = append(RMSDValue, math.Sqrt(value/length))
-		fmt.Println(RMSDValue)
+
 	}
 
 	return RMSDValue
