@@ -170,6 +170,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 					}
 				}
 			}
+
 		}
 
 		for _, angleTris := range residueParameterValue[residue.Name].angles {
@@ -624,6 +625,24 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				continue
 			}
 			if atoms[j].element[0] != parameterData.atomPair[i].atomName[j][0] {
+				break
+			}
+			sym += 1
+		}
+
+		if sym == value {
+			return parameterData.atomPair[i].parameter
+		}
+
+	}
+
+	for i := range parameterData.atomPair {
+		sym := 0
+		for j := range parameterData.atomPair[i].atomName {
+			if parameterData.atomPair[i].atomName[value-j-1] == "X" {
+				continue
+			}
+			if atoms[j].element[0] != parameterData.atomPair[i].atomName[value-j-1][0] {
 				break
 			}
 			sym += 1
