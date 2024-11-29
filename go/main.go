@@ -4,7 +4,6 @@ import "fmt"
 
 func main() {
 	protein, err := readProteinFromFile("../data/calmodulin_noCA.pdb")
-	fmt.Println(len(protein.Residue))
 	Check(err)
 
 	// Parse the charge data file

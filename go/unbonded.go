@@ -9,7 +9,7 @@ import (
 // epsilon: the vacuum dielectric permittivity
 // r: distance between q1 and q2
 func CalculateElectricPotentialEnergy(a1, a2 *Atom, r float64) float64 {
-	return (a1.charge * a2.charge) / (4 * math.Pi * epsilon * r * 1e-10)
+	return (a1.charge * a2.charge) / (4 * math.Pi * epsilon * r)
 }
 
 // A: coefficient 1
@@ -19,17 +19,7 @@ func CalculateLJPotentialEnergy(B, A, r float64) float64 {
 	r_6 := math.Pow(r, 6)
 	r_12 := r_6 * r_6
 
-	return (A / r_6) - (B / r_12)
-}
-
-// C: coefficient 1
-// D: coefficient 2
-// r: distance between atom 1 and atom 2
-func CalculateHydrogenBondEnergy(C, D, r float64) float64 {
-	r_10 := math.Pow(r, 10)
-	r_12 := math.Pow(r, 12)
-
-	return (C / r_10) - (D / r_12)
+	return (A / r_12) - (B / r_6)
 }
 
 func NewVerletList() *VerletList {
@@ -86,47 +76,6 @@ func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]
 	}
 }
 
-func CalculateTotalUnbondEnergy(p *Protein, nonbondedParameter parameterDatabase) map[int]float64 {
-	energyMap := make(map[int]float64)
-	verletList := NewVerletList()
-	verletList.BuildVerlet(p)
-
-	for _, residue := range p.Residue {
-		for _, atom1 := range residue.Atoms {
-			// Initialize energy for atom1
-			energyMap[atom1.index] = 0.0
-
-			// Access the Neighbors map using the dereferenced verletList
-			neighbors, exists := verletList.Neighbors[atom1]
-			if !exists {
-				continue
-			}
-
-			for _, atom2 := range neighbors {
-				// Compute the distance between atom1 and atom2
-				r := Distance(atom1.position, atom2.position)
-
-				// Calculate the electric potential energy between atom1 and atom2
-				electricPotentialEnergy := CalculateElectricPotentialEnergy(atom1, atom2, r)
-
-				// Update the energy map for atom1
-				energyMap[atom1.index] += electricPotentialEnergy
-
-				// Calculate the Lennard-Jones potential energy between atom1 and atom2
-				parameterList := SearchParameter(2, nonbondedParameter, atom1, atom2)
-				if len(parameterList) == 2 {
-					LJPotentialEnergy := CalculateLJPotentialEnergy(parameterList[0], parameterList[1], r)
-
-					// Update the energy map for atom1
-					energyMap[atom1.index] += LJPotentialEnergy
-				}
-			}
-		}
-	}
-
-	return energyMap
-}
-
 func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	forceMap := make(map[int]*TriTuple)
 	totalEnergy := 0.0
@@ -151,7 +100,6 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				// Calculate the electric potential energy between atom1 and atom2
 				electricPotentialEnergy := CalculateElectricPotentialEnergy(atom1, atom2, r)
 				totalEnergy += electricPotentialEnergy
-
 				// Calculate the electric force between atom1 and atom2
 				electricForce := CalculateElectricForce(atom1, atom2, r)
 
@@ -165,7 +113,6 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				if len(parameterList) == 2 {
 					LJPotentialEnergy := CalculateLJPotentialEnergy(parameterList[0], parameterList[1], r)
 					totalEnergy += LJPotentialEnergy
-
 					// Calculate the Lennard-Jones force between atom1 and atom2
 					LJForce := CalculateLJForce(atom1, atom2, parameterList[0], parameterList[1], r)
 
@@ -182,7 +129,7 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 }
 
 func CalculateElectricForce(a1, a2 *Atom, r float64) TriTuple {
-	forceMagnitude := (a1.charge * a2.charge) / (4 * math.Pi * epsilon * r * r * 1e-10)
+	forceMagnitude := (a1.charge * a2.charge) / (4 * math.Pi * epsilon * r * r)
 	unitVector := TriTuple{
 		x: (a2.position.x - a1.position.x) / r,
 		y: (a2.position.y - a1.position.y) / r,

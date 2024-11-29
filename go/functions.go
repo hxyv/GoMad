@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -70,36 +71,65 @@ func magnitude(vector TriTuple) float64 {
 }
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-
 	iteration := 5
 	// set maximum displacement
 	h := 0.01
 
 	for i := 0; i < iteration; i++ {
-		// calculate total Energy of original protein
-		initialEnergy, forceMap := CalculateTotalEnergyForce(currentProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		// calculate total energy and forces of bonded interactions
+		bondedEnergy, bondedForceMap := CalculateTotalEnergyForce(currentProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		fmt.Println("bondedEnergy:", bondedEnergy)
+		// calculate total energy and forces of unbonded interactions
+		unbondedEnergy, unbondedForceMap := CalculateTotalUnbondedEnergyForce(currentProtein, nonbondParameter)
+		fmt.Println("unbondedEnergy:", unbondedEnergy)
+		// combine energies
+		totalEnergy := bondedEnergy + unbondedEnergy
+
+		// create a total force map
+		totalForceMap := make(map[int]*TriTuple)
+		for index, force := range bondedForceMap {
+			totalForceMap[index] = &TriTuple{
+				x: force.x,
+				y: force.y,
+				z: force.z,
+			}
+		}
+
+		for index, force := range unbondedForceMap {
+			if _, exists := totalForceMap[index]; exists {
+				totalForceMap[index].x += force.x
+				totalForceMap[index].y += force.y
+				totalForceMap[index].z += force.z
+			} else {
+				totalForceMap[index] = &TriTuple{
+					x: force.x,
+					y: force.y,
+					z: force.z,
+				}
+			}
+		}
 
 		tempProtein := CopyProtein(currentProtein)
 
 		// perform SteepestDescent, update positions in protein
-		SteepestDescent(tempProtein, h, forceMap)
+		SteepestDescent(tempProtein, h, totalForceMap)
 
-		// calculate total Energy of updated protein
-		updatedEnergy, _ := CalculateTotalEnergyForce(tempProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		// calculate total energy of updated protein
+		newBondedEnergy, _ := CalculateTotalEnergyForce(currentProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		newUnbondedEnergy, _ := CalculateTotalUnbondedEnergyForce(currentProtein, nonbondParameter)
+		newTotalEnergy := newBondedEnergy + newUnbondedEnergy
 
 		// if Total energy decrease, accept the changes of positions and increase maximum displacement h
 		// Otherwise, reject the changes in positions and decrease maximum displacement h
-		if updatedEnergy < initialEnergy {
+		if newTotalEnergy < totalEnergy {
 			currentProtein = tempProtein
 			h *= 1.2
 		} else {
 			h *= 0.2 * h
 		}
-
 	}
 
 	return currentProtein
-
 }
 
 func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
