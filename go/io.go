@@ -414,16 +414,16 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 	return chargeData, nil
 }
 
-func TemporaryPlot(RMSD []float64) {
+func TemporaryPlot(RMSD []float64, time float64) {
 	p := plot.New()
 
-	p.Title.Text = "Plot Example"
-	p.X.Label.Text = "X"
-	p.Y.Label.Text = "Y"
+	p.Title.Text = "Trajectory analysis"
+	p.X.Label.Text = "Time(fs)"
+	p.Y.Label.Text = "RMSD"
 
 	points := make(plotter.XYs, len(RMSD))
 	for i := range points {
-		points[i].X = float64(i)
+		points[i].X = float64(i) * time
 		points[i].Y = RMSD[i]
 	}
 

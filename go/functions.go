@@ -69,13 +69,9 @@ func magnitude(vector TriTuple) float64 {
 	return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
 }
 
-func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
-	return 0.5 * k * (r - r_0) * (r - r_0)
-}
-
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
 
-	iteration := 10
+	iteration := 5
 	// set maximum displacement
 	h := 0.01
 
@@ -114,6 +110,8 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 	bondEnergy := 0.0
 	angleEnergy := 0.0
 	dihedralEnergy := 0.0
+
+	index := 0
 	for _, residue := range p.Residue {
 
 		// Calculate bondstretch energy
@@ -138,41 +136,32 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 							if len(parameterList) != 1 {
 
-								force := CalculateBondForce(parameterList[1], r*0.1, parameterList[0], atom1, atom2)
-								if force.x > 100 || force.x < -100 {
-									continue
-								}
-								if force.y > 100 || force.y < -100 {
-									continue
-								}
-								if force.z > 100 || force.z < -100 {
-									continue
-								}
+								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 
-								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r*0.1, parameterList[0])
+								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
 
-								_, exist := forceMap[i]
+								_, exist := forceMap[i+index]
 								if exist {
-									forceMap[i].x += force.x
-									forceMap[i].y += force.y
-									forceMap[i].z += force.z
+									forceMap[i+index].x += force.x
+									forceMap[i+index].y += force.y
+									forceMap[i+index].z += force.z
 								} else {
-									forceMap[i] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-									forceMap[i].x = force.x
-									forceMap[i].y = force.y
-									forceMap[i].z = force.z
+									forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+									forceMap[i+index].x = force.x
+									forceMap[i+index].y = force.y
+									forceMap[i+index].z = force.z
 								}
 
-								_, exist1 := forceMap[j]
+								_, exist1 := forceMap[j+index]
 								if exist1 {
-									forceMap[j].x += -force.x
-									forceMap[j].y += -force.y
-									forceMap[j].z += -force.z
+									forceMap[j+index].x += -force.x
+									forceMap[j+index].y += -force.y
+									forceMap[j+index].z += -force.z
 								} else {
-									forceMap[j] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-									forceMap[j].x = -force.x
-									forceMap[j].y = -force.y
-									forceMap[j].z = -force.z
+									forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+									forceMap[j+index].x = -force.x
+									forceMap[j+index].y = -force.y
+									forceMap[j+index].z = -force.z
 								}
 
 							}
@@ -203,64 +192,41 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 										force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
 
-										if force_i.x > 100 || force_i.x < -100 {
-											continue
-										}
-
-										if force_i.y > 100 || force_i.y < -100 {
-											continue
-										}
-
-										if force_i.z > 100 || force_i.z < -100 {
-											continue
-										}
-
-										if force_j.x > 100 || force_j.x < -100 {
-											continue
-										}
-
-										if force_j.y > 100 || force_j.y < -100 {
-											continue
-										}
-
-										if force_j.z > 100 || force_j.z < -100 {
-											continue
-										}
 										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
-										_, exist := forceMap[i]
+										_, exist := forceMap[i+index]
 										if exist {
-											forceMap[i].x += force_i.x
-											forceMap[i].y += force_i.y
-											forceMap[i].z += force_i.z
+											forceMap[i+index].x += force_i.x
+											forceMap[i+index].y += force_i.y
+											forceMap[i+index].z += force_i.z
 										} else {
-											forceMap[i] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[i].x = force_i.x
-											forceMap[i].y = force_i.y
-											forceMap[i].z = force_i.z
+											forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[i+index].x = force_i.x
+											forceMap[i+index].y = force_i.y
+											forceMap[i+index].z = force_i.z
 										}
 
-										_, exist1 := forceMap[j]
+										_, exist1 := forceMap[j+index]
 										if exist1 {
-											forceMap[j].x += force_j.x
-											forceMap[j].y += force_j.y
-											forceMap[j].z += force_j.z
+											forceMap[j+index].x += force_j.x
+											forceMap[j+index].y += force_j.y
+											forceMap[j+index].z += force_j.z
 										} else {
-											forceMap[j] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[j].x = force_j.x
-											forceMap[j].y = force_j.y
-											forceMap[j].z = force_j.z
+											forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[j+index].x = force_j.x
+											forceMap[j+index].y = force_j.y
+											forceMap[j+index].z = force_j.z
 										}
 
-										_, exist2 := forceMap[k]
+										_, exist2 := forceMap[k+index]
 										if exist2 {
-											forceMap[k].x += force_k.x
-											forceMap[k].y += force_k.y
-											forceMap[k].z += force_k.z
+											forceMap[k+index].x += force_k.x
+											forceMap[k+index].y += force_k.y
+											forceMap[k+index].z += force_k.z
 										} else {
-											forceMap[k] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[k].x = force_k.x
-											forceMap[k].y = force_k.y
-											forceMap[k].z = force_k.z
+											forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[k+index].x = force_k.x
+											forceMap[k+index].y = force_k.y
+											forceMap[k+index].z = force_k.z
 										}
 
 									}
@@ -296,75 +262,53 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 												force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
-												if force_i.x > 100 || force_i.x < -100 {
-													continue
-												}
-												if force_i.y > 100 || force_i.y < -100 {
-													continue
-												}
-
-												if force_i.z > 100 || force_i.z < -100 {
-													continue
-												}
-
-												if force_j.x > 100 || force_j.x < -100 {
-													continue
-												}
-
-												if force_j.y > 100 || force_j.y < -100 {
-													continue
-												}
-
-												if force_j.z > 100 || force_j.z < -100 {
-													continue
-												}
 												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
-												_, exist := forceMap[i]
+												_, exist := forceMap[i+index]
 												if exist {
-													forceMap[i].x += force_i.x
-													forceMap[i].y += force_i.y
-													forceMap[i].z += force_i.z
+													forceMap[i+index].x += force_i.x
+													forceMap[i+index].y += force_i.y
+													forceMap[i+index].z += force_i.z
 												} else {
-													forceMap[i] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[i].x = force_i.x
-													forceMap[i].y = force_i.y
-													forceMap[i].z = force_i.z
+													forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[i+index].x = force_i.x
+													forceMap[i+index].y = force_i.y
+													forceMap[i+index].z = force_i.z
 												}
 
-												_, exist1 := forceMap[j]
+												_, exist1 := forceMap[j+index]
 												if exist1 {
-													forceMap[j].x += force_j.x
-													forceMap[j].y += force_j.y
-													forceMap[j].z += force_j.z
+													forceMap[j+index].x += force_j.x
+													forceMap[j+index].y += force_j.y
+													forceMap[j+index].z += force_j.z
 												} else {
-													forceMap[j] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[j].x = force_j.x
-													forceMap[j].y = force_j.y
-													forceMap[j].z = force_j.z
+													forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[j+index].x = force_j.x
+													forceMap[j+index].y = force_j.y
+													forceMap[j+index].z = force_j.z
 												}
 
-												_, exist2 := forceMap[k]
+												_, exist2 := forceMap[k+index]
 												if exist2 {
-													forceMap[k].x += force_k.x
-													forceMap[k].y += force_k.y
-													forceMap[k].z += force_k.z
+													forceMap[k+index].x += force_k.x
+													forceMap[k+index].y += force_k.y
+													forceMap[k+index].z += force_k.z
 												} else {
-													forceMap[k] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[k].x = force_k.x
-													forceMap[k].y = force_k.y
-													forceMap[k].z = force_k.z
+													forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[k+index].x = force_k.x
+													forceMap[k+index].y = force_k.y
+													forceMap[k+index].z = force_k.z
 												}
 
-												_, exist3 := forceMap[l]
+												_, exist3 := forceMap[l+index]
 												if exist3 {
-													forceMap[l].x += force_l.x
-													forceMap[l].y += force_l.y
-													forceMap[l].z += force_l.z
+													forceMap[l+index].x += force_l.x
+													forceMap[l+index].y += force_l.y
+													forceMap[l+index].z += force_l.z
 												} else {
-													forceMap[l] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[l].x = force_l.x
-													forceMap[l].y = force_l.y
-													forceMap[l].z = force_l.z
+													forceMap[l+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[l+index].x = force_l.x
+													forceMap[l+index].y = force_l.y
+													forceMap[l+index].z = force_l.z
 												}
 
 											}
@@ -379,7 +323,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 				}
 			}
 		}
-
+		index += len(residue.Atoms)
 	}
 
 	// additional addtion in interactions between two AA
@@ -405,17 +349,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						}
 						parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 						if len(parameterList) != 1 {
-							force := CalculateBondForce(parameterList[1], r*0.1, parameterList[0], atom1, atom2)
-							if force.x > 100 || force.x < -100 {
-								continue
-							}
-							if force.y > 100 || force.y < -100 {
-								continue
-							}
-							if force.z > 100 || force.z < -100 {
-								continue
-							}
-							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r*0.1, parameterList[0])
+							force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
+
+							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
 
 							_, exist := forceMap[index1+n]
 							if exist {
@@ -473,28 +409,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
-									if force_i.x > 100 || force_i.x < -100 {
-										continue
-									}
-									if force_i.y > 100 || force_i.y < -100 {
-										continue
-									}
 
-									if force_i.z > 100 || force_i.z < -100 {
-										continue
-									}
-
-									if force_j.x > 100 || force_j.x < -100 {
-										continue
-									}
-
-									if force_j.y > 100 || force_j.y < -100 {
-										continue
-									}
-
-									if force_j.z > 100 || force_j.z < -100 {
-										continue
-									}
 									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
 									_, exist := forceMap[index2+n]
 									if exist {
@@ -562,27 +477,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						if len(parameterList) != 1 {
 
 							force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
-							if force_i.x > 100 || force_i.x < -100 {
-								continue
-							}
-							if force_i.y > 100 || force_i.y < -100 {
-								continue
-							}
 
-							if force_i.z > 100 || force_i.z < -100 {
-								continue
-							}
-							if force_j.x > 100 || force_j.x < -100 {
-								continue
-							}
-
-							if force_j.y > 100 || force_j.y < -100 {
-								continue
-							}
-
-							if force_j.z > 100 || force_j.z < -100 {
-								continue
-							}
 							angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
 							_, exist := forceMap[index3+n]
 							if exist {
@@ -653,27 +548,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
-									if force_i.x > 100 || force_i.x < -100 {
-										continue
-									}
-									if force_i.y > 100 || force_i.y < -100 {
-										continue
-									}
 
-									if force_i.z > 100 || force_i.z < -100 {
-										continue
-									}
-									if force_j.x > 100 || force_j.x < -100 {
-										continue
-									}
-
-									if force_j.y > 100 || force_j.y < -100 {
-										continue
-									}
-
-									if force_j.z > 100 || force_j.z < -100 {
-										continue
-									}
 									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
 									_, exist := forceMap[index4+n]
 									if exist {
@@ -794,12 +669,13 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 		z: (atom1.position.z - atom2.position.z) / bondLen,
 	}
 
-	fScale := k * (r - r_0)
+	fScale := k * (r - r_0*10)
 
+	// unit: g/s^2/mol/A
 	force := TriTuple{
-		x: fScale * unitVector.x * 10 / (6 * math.Pow10(23)),
-		y: fScale * unitVector.y * 10 / (6 * math.Pow10(23)),
-		z: fScale * unitVector.z * 10 / (6 * math.Pow10(23)),
+		x: fScale * unitVector.x / math.Pow10(6),
+		y: fScale * unitVector.y / math.Pow10(6),
+		z: fScale * unitVector.z / math.Pow10(6),
 	}
 
 	return force
@@ -823,15 +699,15 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 	der_theta_z_32 := DerivateAnglePositionZ(atom3, atom2, atom1, theta)
 
 	force_i := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_12 * 10 / (6 * math.Pow10(23)),
-		y: der_U_thate * der_that_cos * der_theta_y_12 * 10 / (6 * math.Pow10(23)),
-		z: der_U_thate * der_that_cos * der_theta_z_12 * 10 / (6 * math.Pow10(23)),
+		x: der_U_thate * der_that_cos * der_theta_x_12 / math.Pow10(6),
+		y: der_U_thate * der_that_cos * der_theta_y_12 / math.Pow10(6),
+		z: der_U_thate * der_that_cos * der_theta_z_12 / math.Pow10(6),
 	}
 
 	force_k := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_32 * 10 / (6 * math.Pow10(23)),
-		y: der_U_thate * der_that_cos * der_theta_y_32 * 10 / (6 * math.Pow10(23)),
-		z: der_U_thate * der_that_cos * der_theta_z_32 * 10 / (6 * math.Pow10(23)),
+		x: der_U_thate * der_that_cos * der_theta_x_32 / math.Pow10(6),
+		y: der_U_thate * der_that_cos * der_theta_y_32 / math.Pow10(6),
+		z: der_U_thate * der_that_cos * der_theta_z_32 / math.Pow10(6),
 	}
 
 	force_j := TriTuple{
@@ -875,31 +751,27 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	der_cos_ux, der_cos_uy, der_cos_uz := CalculateDerivate(v_u, v_t, phi)
 
 	force_i := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) * 10 / (6 * math.Pow10(23)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) * 10 / (6 * math.Pow10(23)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) * 10 / (6 * math.Pow10(23)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) / math.Pow10(6),
 	}
 
 	force_j := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) * 10 / (6 * math.Pow10(23)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) * 10 / (6 * math.Pow10(23)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) * 10 / (6 * math.Pow10(23)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) / math.Pow10(6),
 	}
 
 	force_k := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) * 10 / (6 * math.Pow10(23)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) * 10 / (6 * math.Pow10(23)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) * 10 / (6 * math.Pow10(23)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) / math.Pow10(6),
 	}
 
 	force_l := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) * 10 / (6 * math.Pow10(23)),
-		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) * 10 / (6 * math.Pow10(23)),
-		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) * 10 / (6 * math.Pow10(23)),
-	}
-
-	if force_i.x > 100 {
-		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
+		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) / math.Pow10(6),
 	}
 
 	return force_i, force_j, force_k, force_l
@@ -970,9 +842,9 @@ func CopyTriTuple(tri TriTuple) TriTuple {
 
 func CalculateVector(atom1, atom2 *Atom) TriTuple {
 	var vector TriTuple
-	vector.x = (atom2.position.x - atom1.position.x) * 0.1
-	vector.y = (atom2.position.y - atom1.position.y) * 0.1
-	vector.z = (atom2.position.z - atom1.position.z) * 0.1
+	vector.x = (atom2.position.x - atom1.position.x)
+	vector.y = (atom2.position.y - atom1.position.y)
+	vector.z = (atom2.position.z - atom1.position.z)
 
 	return vector
 }
