@@ -8,10 +8,7 @@ func main() {
 
 	// Parse the charge data file
 	chargeData, err := parseChargeFile("../data/gromacs43_atom_charge.rtp")
-	if err != nil {
-		fmt.Printf("Error parsing charge file: %v\n", err)
-		return
-	}
+	Check(err)
 
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
@@ -29,7 +26,7 @@ func main() {
 	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
 	Check(error)
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-	time := 0.1
+	time := 0.00000001
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RSMD := CalculateRMSD(timepoints)
 	TemporaryPlot(RSMD, time)
