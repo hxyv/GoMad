@@ -32,7 +32,8 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 func UpdateProtein(currentProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (Protein, float64) {
 	newProtein := CopyProtein(&currentProtein)
 
-	energy, forceMap := CalculateTotalEnergyForce(newProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+	energy, forceMap := CombineEnergyAndForce(newProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+
 	forceIndex := 0
 
 	// range and update every body in universe
