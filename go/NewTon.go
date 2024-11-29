@@ -12,7 +12,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 5000
+	iteration := 50
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
@@ -54,7 +54,7 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 
 	}
 
-	//AddSimpleBondConstraints(newProtein, bondParameter, residueParameterValue)
+	AddSimpleBondConstraints(newProtein, bondParameter, residueParameterValue)
 
 	return *newProtein, energy
 }

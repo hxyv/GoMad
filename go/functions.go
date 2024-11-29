@@ -338,7 +338,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 			if aminoA.Atoms[n].element == "CB" {
 				atom1 := aminoA.Atoms[n]
 				for t := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[t].element == "N*" {
+					if p.Residue[m+1].Atoms[t].element == "N" {
 						atom2 := p.Residue[m+1].Atoms[t]
 						r := Distance(atom1.position, atom2.position)
 						if r == 0 {
@@ -398,7 +398,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 				atom1 := aminoA.Atoms[n]
 
 				for g := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[g].element == "N*" {
+					if p.Residue[m+1].Atoms[g].element == "N" {
 						atom2 := p.Residue[m+1].Atoms[g]
 						for h := g + 1; h < len(p.Residue[m+1].Atoms); h++ {
 							if p.Residue[m+1].Atoms[h].element[0] == 'H' {
@@ -470,7 +470,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 				atom1 := aminoA.Atoms[n]
 				atom2 := aminoA.Atoms[n+1]
 				for g := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[g].element == "N*" {
+					if p.Residue[m+1].Atoms[g].element == "N" {
 						atom3 := p.Residue[m+1].Atoms[g]
 						theta := CalculateAngle(atom1, atom2, atom3)
 						parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
