@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -32,10 +31,13 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 									if r == 0 {
 										continue
 									}
-									for r > float64(tolerance) {
-										correction := (r - r0*10) / 2
+									maximalIteration := 5
+									remark := 0
+									for r > float64(tolerance) && remark < maximalIteration {
+										correction := (r - r0*10) / 100
+										remark += 1
 										if math.IsNaN(correction / r) {
-											continue
+											break
 										}
 										p.Residue[q].Atoms[i].position.x += (atom2.position.x - atom1.position.x) * correction
 										p.Residue[q].Atoms[i].position.y += (atom2.position.y - atom1.position.y) * correction
@@ -46,7 +48,6 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 										p.Residue[q].Atoms[j].position.z += (atom1.position.z - atom2.position.z) * correction
 										coverage = false
 
-										fmt.Println(p.Residue[q].Atoms[j].position)
 									}
 
 								}
@@ -69,7 +70,7 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 			if aminoA.Atoms[n].element == "CB" {
 				atom1 := aminoA.Atoms[n]
 				for t := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[t].element == "N*" {
+					if p.Residue[m+1].Atoms[t].element == "N" {
 						atom2 := p.Residue[m+1].Atoms[t]
 
 						parameterList := SearchParameter(2, bondParameter, atom1, atom2)
@@ -79,7 +80,10 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 							if r == 0 {
 								continue
 							}
-							if r > float64(tolerance) {
+							maximalIteration := 5
+							remark := 0
+							if r > float64(tolerance) || remark > maximalIteration {
+								remark += 1
 								correction := (r - r0) / 2
 								p.Residue[m].Atoms[n].position.x += (atom1.position.x - atom2.position.x) * correction / r
 								p.Residue[m].Atoms[n].position.y += (atom1.position.y - atom2.position.y) * correction / r
