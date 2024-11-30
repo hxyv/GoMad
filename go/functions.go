@@ -675,10 +675,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 	}
 
-	fmt.Println("bondEnergy:", bondEnergy)
-	fmt.Println("angleEnergy:", angleEnergy)
-	fmt.Println("dihedralEnergy:", dihedralEnergy)
-
 	totalEnergy := bondEnergy + angleEnergy + dihedralEnergy
 	return totalEnergy, forceMap
 }
