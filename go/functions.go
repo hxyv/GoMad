@@ -644,7 +644,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 			}
 
 		}
-		index2 += len(aminoA.Atoms)
+		index4 += len(aminoA.Atoms)
 
 	}
 
