@@ -110,7 +110,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterValue map[string]residueP
 }
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	iteration := 5
+	iteration := 10
 	// set maximum displacement
 	h := 0.01
 
@@ -734,10 +734,14 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 			if exist {
 				force := forceMap[protein.Residue[i].Atoms[j].index+1]
 
+				if math.IsNaN(force.x) {
+					fmt.Println(true)
+				}
 				magn := magnitude(*force)
-				if magn == 0 {
+				if magn == 0 || math.IsNaN(magn) {
 					continue
 				}
+
 				protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
 				protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
 				protein.Residue[i].Atoms[j].position.z = protein.Residue[i].Atoms[j].position.z + (force.z*h)/magn

@@ -13,11 +13,14 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 10
+	iteration := 50
+	CheckPosition(timePoints[0])
+	fmt.Println("after first check")
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
 
+		CheckPosition(timePoints[len(timePoints)-1])
 		totalTime += time
 		if totalTime > cerition {
 			break
@@ -44,9 +47,6 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 
 			if exist {
 
-				if math.IsNaN(forceMap[forceIndex].x) {
-					fmt.Println(true)
-				}
 				oldAcceleration, oldVelocity := a.accelerated, a.velocity // OK :)
 				newProtein.Residue[i].Atoms[j].accelerated = UpdateAcceleration(forceMap[forceIndex], a)
 				newProtein.Residue[i].Atoms[j].velocity = UpdateVelocity(a, oldAcceleration, time)
@@ -58,7 +58,7 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 
 	}
 
-	AddSimpleBondConstraints(newProtein, bondParameter, residueParameterValue)
+	//AddSimpleBondConstraints(newProtein, bondParameter, residueParameterValue)
 
 	return *newProtein, energy
 }
@@ -123,4 +123,16 @@ func CalculateRMSD(timePoints []Protein) []float64 {
 	}
 
 	return RMSDValue
+}
+
+func CheckPosition(p Protein) {
+	fmt.Println("Check the nan position index")
+	for _, residue := range p.Residue {
+		for _, atom := range residue.Atoms {
+			if math.IsNaN(atom.position.x) || math.IsNaN(atom.position.x) || math.IsNaN(atom.position.x) {
+				fmt.Println(atom.index)
+			}
+
+		}
+	}
 }

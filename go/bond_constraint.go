@@ -36,7 +36,25 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 									for r > float64(tolerance) && remark < maximalIteration {
 										correction := (r - r0*10) / 100
 										remark += 1
-										if math.IsNaN(correction / r) {
+										if math.IsNaN(correction/r) || math.IsNaN((atom1.position.x-atom2.position.x)*correction) {
+											break
+										}
+
+										if math.IsNaN((atom1.position.y - atom2.position.y) * correction) {
+											break
+										}
+										if math.IsNaN((atom1.position.z - atom2.position.z) * correction) {
+											break
+										}
+
+										if math.IsNaN((atom2.position.x - atom1.position.x) * correction) {
+											break
+										}
+
+										if math.IsNaN((atom2.position.y - atom1.position.y) * correction) {
+											break
+										}
+										if math.IsNaN((atom2.position.z - atom1.position.z) * correction) {
 											break
 										}
 										p.Residue[q].Atoms[i].position.x += (atom2.position.x - atom1.position.x) * correction
@@ -82,16 +100,37 @@ func AddSimpleBondConstraints(p *Protein, bondParameter parameterDatabase, resid
 							}
 							maximalIteration := 5
 							remark := 0
-							if r > float64(tolerance) || remark > maximalIteration {
+							if r > float64(tolerance) || remark < maximalIteration {
 								remark += 1
-								correction := (r - r0) / 2
-								p.Residue[m].Atoms[n].position.x += (atom1.position.x - atom2.position.x) * correction / r
-								p.Residue[m].Atoms[n].position.y += (atom1.position.y - atom2.position.y) * correction / r
-								p.Residue[m].Atoms[n].position.z += (atom1.position.z - atom2.position.z) * correction / r
+								correction := (r - r0*10) / 100
+								if math.IsNaN((atom1.position.x - atom2.position.x) * correction) {
+									break
+								}
 
-								p.Residue[m+1].Atoms[t].position.x += (atom2.position.x - atom1.position.x) * correction / r
-								p.Residue[m+1].Atoms[t].position.y += (atom2.position.y - atom1.position.y) * correction / r
-								p.Residue[m+1].Atoms[t].position.z += (atom2.position.z - atom1.position.z) * correction / r
+								if math.IsNaN((atom1.position.y - atom2.position.y) * correction) {
+									break
+								}
+								if math.IsNaN((atom1.position.z - atom2.position.z) * correction) {
+									break
+								}
+
+								if math.IsNaN((atom2.position.x - atom1.position.x) * correction) {
+									break
+								}
+
+								if math.IsNaN((atom2.position.y - atom1.position.y) * correction) {
+									break
+								}
+								if math.IsNaN((atom2.position.z - atom1.position.z) * correction) {
+									break
+								}
+								p.Residue[m].Atoms[n].position.x += (atom1.position.x - atom2.position.x) * correction
+								p.Residue[m].Atoms[n].position.y += (atom1.position.y - atom2.position.y) * correction
+								p.Residue[m].Atoms[n].position.z += (atom1.position.z - atom2.position.z) * correction
+
+								p.Residue[m+1].Atoms[t].position.x += (atom2.position.x - atom1.position.x) * correction
+								p.Residue[m+1].Atoms[t].position.y += (atom2.position.y - atom1.position.y) * correction
+								p.Residue[m+1].Atoms[t].position.z += (atom2.position.z - atom1.position.z) * correction
 								coverage = false
 							}
 
