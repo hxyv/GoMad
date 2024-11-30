@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -12,7 +13,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 50
+	iteration := 10
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
@@ -43,7 +44,9 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterValue m
 
 			if exist {
 
-				//fmt.Println(forceMap[forceIndex])
+				if math.IsNaN(forceMap[forceIndex].x) {
+					fmt.Println(true)
+				}
 				oldAcceleration, oldVelocity := a.accelerated, a.velocity // OK :)
 				newProtein.Residue[i].Atoms[j].accelerated = UpdateAcceleration(forceMap[forceIndex], a)
 				newProtein.Residue[i].Atoms[j].velocity = UpdateVelocity(a, oldAcceleration, time)

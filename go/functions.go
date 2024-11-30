@@ -84,6 +84,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterValue map[string]residueP
 	// Create a total force map
 	totalForceMap := make(map[int]*TriTuple)
 	for index, force := range bondedForceMap {
+
 		totalForceMap[index] = &TriTuple{
 			x: force.x,
 			y: force.y,
@@ -175,8 +176,11 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							if len(parameterList) != 1 {
 
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
-
+								if math.IsNaN(force.x) {
+									continue
+								}
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
+
 								_, exist := forceMap[i+index]
 								if exist {
 									forceMap[i+index].x += force.x
@@ -231,6 +235,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 										force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
 
 										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+										if math.IsNaN(angleEnergy) {
+											continue
+										}
 										_, exist := forceMap[i+index]
 										if exist {
 											forceMap[i+index].x += force_i.x
@@ -301,6 +308,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 												force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
 												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+												if math.IsNaN(dihedralEnergy) {
+													continue
+												}
 												_, exist := forceMap[i+index]
 												if exist {
 													forceMap[i+index].x += force_i.x
@@ -390,7 +400,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 
 							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
-
+							if math.IsNaN(bondEnergy) {
+								continue
+							}
 							_, exist := forceMap[index1+n]
 							if exist {
 								forceMap[index1+n].x += force.x
@@ -442,13 +454,18 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							if p.Residue[m+1].Atoms[h].element[0] == 'H' {
 								atom3 := p.Residue[m+1].Atoms[h]
 								theta := CalculateAngle(atom1, atom2, atom3)
-
+								if math.IsNaN(theta) {
+									continue
+								}
 								parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
 
 									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+									if math.IsNaN(angleEnergy) {
+										continue
+									}
 									_, exist := forceMap[index2+n]
 									if exist {
 										forceMap[index2+n].x += force_i.x
@@ -511,12 +528,18 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 					if p.Residue[m+1].Atoms[g].element == "N" {
 						atom3 := p.Residue[m+1].Atoms[g]
 						theta := CalculateAngle(atom1, atom2, atom3)
+						if math.IsNaN(theta) {
+							continue
+						}
 						parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
 						if len(parameterList) != 1 {
 
 							force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
 
 							angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+							if math.IsNaN(angleEnergy) {
+								continue
+							}
 							_, exist := forceMap[index3+n]
 							if exist {
 								forceMap[index3+n].x += force_i.x
@@ -582,12 +605,18 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							if p.Residue[m+1].Atoms[h].element == "H" {
 								atom4 := p.Residue[m+1].Atoms[h]
 								phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
+								if math.IsNaN(phi) {
+									continue
+								}
 								parameterList := []float64{180.0, 6.90360, 2}
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
 									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+									if math.IsNaN(dihedralEnergy) {
+										continue
+									}
 									_, exist := forceMap[index4+n]
 									if exist {
 										forceMap[index4+n].x += force_i.x
@@ -704,7 +733,11 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 			_, exist := forceMap[protein.Residue[i].Atoms[j].index+1]
 			if exist {
 				force := forceMap[protein.Residue[i].Atoms[j].index+1]
+
 				magn := magnitude(*force)
+				if magn == 0 {
+					continue
+				}
 				protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
 				protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
 				protein.Residue[i].Atoms[j].position.z = protein.Residue[i].Atoms[j].position.z + (force.z*h)/magn
