@@ -76,8 +76,6 @@ func CombineEnergyAndForce(p *Protein, residueParameterValue map[string]residueP
 
 	// Calculate total energy and forces of unbonded interactions
 	unbondedEnergy, unbondedForceMap := CalculateTotalUnbondedEnergyForce(p, nonbondParameter)
-	fmt.Println("bondedEnergy:", bondedEnergy)
-	fmt.Println("unbondedEnergy:", unbondedEnergy)
 	// Combine energies
 	totalEnergy := bondedEnergy + unbondedEnergy
 
@@ -647,9 +645,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 		index4 += len(aminoA.Atoms)
 
 	}
-
-	//  unfinished for nonbonded
-
+	fmt.Println("bondEnergy:", bondEnergy)
+	fmt.Println("angleEnergy:", angleEnergy)
+	fmt.Println("dihedralEnergy:", dihedralEnergy)
 	totalEnergy := bondEnergy + angleEnergy + dihedralEnergy
 	return totalEnergy, forceMap
 }
