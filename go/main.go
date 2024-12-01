@@ -1,9 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
 func main() {
-	protein, err := readProteinFromFile("../data/calmodulin_noCA.pdb")
+	filepath := os.Args[1]
+	time, _ := strconv.ParseFloat(os.Args[2], 64)
+	protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
 	Check(err)
 
 	// Parse the charge data file
@@ -27,13 +33,11 @@ func main() {
 	Check(error)
 
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-  
-	time := 0.001 // 0.00000001
-
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RSMD := CalculateRMSD(timepoints)
 	TemporaryPlot(RSMD, time)
-	WriteProteinToPDB(&timepoints[len(timepoints)-1], "output.pdb")
+	writeRMSD(RSMD)
+	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
 
 }
 
