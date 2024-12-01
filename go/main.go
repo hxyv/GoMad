@@ -27,7 +27,7 @@ func main() {
 	Check(error)
 
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-	time := 0.00000001
+	time := 0.001 // 0.00000001
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RSMD := CalculateRMSD(timepoints)
 	TemporaryPlot(RSMD, time)
