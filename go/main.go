@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 )
 
 func main() {
-	filepath := os.Args[1]
-	time, _ := strconv.ParseFloat(os.Args[2], 64)
-	protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
+	// filepath := os.Args[1]
+	// time, _ := strconv.ParseFloat(os.Args[2], 64)
+	// protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
+	// Check(err)
+
+	filepath := "../data/calmodulin_noCA.pdb"
+	time := 0.00001
+	protein, err := readProteinFromFile(filepath)
 	Check(err)
 
 	// Parse the charge data file
@@ -19,7 +22,7 @@ func main() {
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
 
-	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
 	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
 	Check(error)

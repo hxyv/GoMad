@@ -163,9 +163,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 		for _, bondPairs := range residueParameterValue[residue.Name].bonds {
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
-				if atom1.element[0] == (*bondPairs).atoms[0][0] {
+				if atom1.element == (*bondPairs).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms); j++ {
-						if residue.Atoms[j].element[0] == (*bondPairs).atoms[1][0] {
+						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
 							r := Distance(atom1.position, atom2.position)
@@ -221,12 +221,12 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 		for _, angleTris := range residueParameterValue[residue.Name].angles {
 			for i := 0; i < len(residue.Atoms)-2; i++ {
 				atom1 := residue.Atoms[i]
-				if atom1.element[0] == (*angleTris).atoms[0][0] {
+				if atom1.element == (*angleTris).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms)-1; j++ {
-						if residue.Atoms[j].element[0] == (*angleTris).atoms[1][0] {
+						if residue.Atoms[j].element == (*angleTris).atoms[1] {
 							atom2 := residue.Atoms[j]
 							for k := j + 1; k < len(residue.Atoms); k++ {
-								if residue.Atoms[k].element[0] == (*angleTris).atoms[2][0] {
+								if residue.Atoms[k].element == (*angleTris).atoms[2] {
 									atom3 := residue.Atoms[k]
 									theta := CalculateAngle(atom1, atom2, atom3)
 
@@ -292,15 +292,15 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 		for _, dihedralValues := range residueParameterValue[residue.Name].dihedrals {
 			for i := 0; i < len(residue.Atoms)-3; i++ {
 				atom1 := residue.Atoms[i]
-				if atom1.element[0] == (*dihedralValues).atoms[0][0] {
+				if atom1.element == (*dihedralValues).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms)-2; j++ {
-						if residue.Atoms[j].element[0] == (*dihedralValues).atoms[1][0] {
+						if residue.Atoms[j].element == (*dihedralValues).atoms[1] {
 							atom2 := residue.Atoms[j]
 							for k := j + 1; k < len(residue.Atoms)-1; k++ {
-								if residue.Atoms[k].element[0] == (*dihedralValues).atoms[2][0] {
+								if residue.Atoms[k].element == (*dihedralValues).atoms[2] {
 									atom3 := residue.Atoms[k]
 									for l := k + 1; l < len(residue.Atoms); l++ {
-										if residue.Atoms[l].element[0] == (*dihedralValues).atoms[3][0] {
+										if residue.Atoms[l].element == (*dihedralValues).atoms[3] {
 											atom4 := residue.Atoms[l]
 											phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
 											if math.IsNaN(phi) {
@@ -399,7 +399,8 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						if r > 2 {
 							continue
 						}
-						parameterList := SearchParameter(2, bondParameter, atom1, atom2)
+						parameterList := []float64{0.13830, 354803.2}
+
 						if len(parameterList) != 1 {
 							force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 
@@ -461,7 +462,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if math.IsNaN(theta) {
 									continue
 								}
-								parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
+								parameterList := []float64{125.800, 418.400}
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
@@ -535,7 +536,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						if math.IsNaN(theta) {
 							continue
 						}
-						parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
+						parameterList := []float64{122.900, 669.440}
 						if len(parameterList) != 1 {
 
 							force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
@@ -692,7 +693,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 			if parameterData.atomPair[i].atomName[j] == "X" {
 				continue
 			}
-			if atoms[j].element[0] != parameterData.atomPair[i].atomName[j][0] {
+			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
 				break
 			}
 			sym += 1
@@ -710,7 +711,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 			if parameterData.atomPair[i].atomName[value-j-1] == "X" {
 				continue
 			}
-			if atoms[j].element[0] != parameterData.atomPair[i].atomName[value-j-1][0] {
+			if atoms[j].element != parameterData.atomPair[i].atomName[value-j-1] {
 				break
 			}
 			sym += 1
