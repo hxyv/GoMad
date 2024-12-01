@@ -12,7 +12,7 @@ func CalculateElectricPotentialEnergy(a1, a2 *Atom, r float64) float64 {
 	chargeMagnitude := a1.charge * a2.charge
 
 	electricPotentialEnergy := 0.0
-	if chargeMagnitude > 0.0 {
+	if chargeMagnitude < 0.0 {
 		electricPotentialEnergy = -chargeMagnitude / (4 * math.Pi * epsilon * r)
 	} else {
 		electricPotentialEnergy = chargeMagnitude / (4 * math.Pi * epsilon * r)
