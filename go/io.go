@@ -20,100 +20,61 @@ import (
 
 // readProteinFromFile take a fileName as example
 // return the Protein structure using the informtion of file
-func readProteinFromFile(fileName string) (Protein, error) {
-	file, err := os.Open(fileName)
+func readProteinFromFile(filepath string) (Protein, error) {
+	file, err := os.Open(filepath)
 	if err != nil {
 		return Protein{}, err
 	}
 	defer file.Close()
 
-	var residues []*Residue
-	var currentResidue *Residue
 	var protein Protein
+	var currentResidue *Residue
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		// Process lines that start with "ATOM"
 		if strings.HasPrefix(line, "ATOM") {
-			atom, residueName, residueID, ChainID, err := parsePDBLine(line)
-			if err != nil {
-				return Protein{}, err
+			parts := strings.Fields(line)
+			if len(parts) < 11 {
+				continue
 			}
 
-			// If it's a new residue or first row, start a new Residue object
-			if currentResidue == nil || currentResidue.Name != residueName {
-				// Add the previous residue to the list if it exists
-				if currentResidue != nil {
-					residues = append(residues, currentResidue)
-				}
-				residueIDI, _ := strconv.Atoi(residueID)
-				// otherwise,Create a new Residue object
+			atomIndex, _ := strconv.Atoi(parts[1])
+			element := parts[2]
+			residueName := parts[3]
+			chainID := parts[4]
+			residueID, _ := strconv.Atoi(parts[5])
+			x, _ := strconv.ParseFloat(parts[6], 64)
+			y, _ := strconv.ParseFloat(parts[7], 64)
+			z, _ := strconv.ParseFloat(parts[8], 64)
+
+			if currentResidue == nil || currentResidue.ID != residueID {
 				currentResidue = &Residue{
 					Name:    residueName,
-					ID:      residueIDI,
-					ChainID: ChainID,
-					Atoms:   []*Atom{&atom},
+					ID:      residueID,
+					ChainID: chainID,
+					Atoms:   []*Atom{},
 				}
-			} else {
-				// If it's the same residue, add the atom to the current residue
-				currentResidue.Atoms = append(currentResidue.Atoms, &atom)
+				protein.Residue = append(protein.Residue, currentResidue)
 			}
-		}
-	}
 
-	// Add the last residue to the list
-	if currentResidue != nil {
-		residues = append(residues, currentResidue)
+			atom := &Atom{
+				index:    atomIndex,
+				position: TriTuple{x: x, y: y, z: z},
+				element:  element,
+			}
+			currentResidue.Atoms = append(currentResidue.Atoms, atom)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return Protein{}, err
 	}
 
-	// Set the residues in the protein
-	protein.Residue = residues
 	// upload weight of each atoms
 	protein.UpdateMasses(massTable)
 
 	return protein, nil
-}
-
-// Function to parse a PDB line based on spaces
-func parsePDBLine(line string) (Atom, string, string, string, error) {
-	fields := strings.Fields(line)
-	var atom Atom
-
-	// Parse coordinates
-	x, err := strconv.ParseFloat(fields[6], 64)
-	if err != nil {
-		return Atom{}, "", "", "", fmt.Errorf("error parsing x position: %v", err)
-	}
-	y, err := strconv.ParseFloat(fields[7], 64)
-	if err != nil {
-		return Atom{}, "", "", "", fmt.Errorf("error parsing y position: %v", err)
-	}
-	z, err := strconv.ParseFloat(fields[8], 64)
-	if err != nil {
-		return Atom{}, "", "", "", fmt.Errorf("error parsing z position: %v", err)
-	}
-
-	// Parse element symbol
-	element := fields[2]
-	ChainID := fields[4]
-	index, _ := strconv.Atoi(fields[1])
-	// pass value to atom object
-	atom.position.x = x
-	atom.position.y = y
-	atom.position.z = z
-	atom.element = element
-	atom.index = index
-	// Extract residue name and ID
-	residueName := fields[3]
-	residueID := fields[5]
-
-	return atom, residueName, residueID, ChainID, nil
 }
 
 func (p *Protein) UpdateMasses(massTable map[string]float64) {
@@ -424,7 +385,7 @@ func TemporaryPlot(RMSD []float64, time float64) {
 
 	p.Add(s)
 
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "scatter.png"); err != nil {
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "visualization/scatter.png"); err != nil {
 		panic(err)
 	}
 
