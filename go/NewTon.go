@@ -129,7 +129,7 @@ func CheckPosition(p Protein) {
 	fmt.Println("Check the nan position index")
 	for _, residue := range p.Residue {
 		for _, atom := range residue.Atoms {
-			if math.IsNaN(atom.position.x) || math.IsNaN(atom.position.x) || math.IsNaN(atom.position.x) {
+			if math.IsNaN(atom.position.x) || math.IsNaN(atom.position.y) || math.IsNaN(atom.position.z) {
 				fmt.Println(atom.index)
 			}
 
