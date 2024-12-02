@@ -109,7 +109,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterValue map[string]residueP
 }
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	iteration := 50
+	iteration := 10
 	// set maximum displacement
 	h := 0.01
 
@@ -694,7 +694,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 											}
 										}
 									}
-                  
+
 									if (*dihedralValues).atoms[3] == "+N" && w != len(p.Residue)-1 {
 										atom4 := p.Residue[w+1].Atoms[0]
 										phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
@@ -884,7 +884,7 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 		z: (atom1.position.z - atom2.position.z) / bondLen,
 	}
 
-	fScale := -k * (r - r_0*10)
+	fScale := k * (r - r_0*10)
 
 	// unit: g/s^2/mol/A
 	force := TriTuple{

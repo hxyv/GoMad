@@ -11,9 +11,12 @@ func main() {
 	// Check(err)
 
 	filepath := "../data/calmodulin_noCA.pdb"
-	time := 0.00001
+	time := 1.0
 	protein, err := readProteinFromFile(filepath)
 	Check(err)
+	for _, residue := range protein.Residue {
+		fmt.Println(residue.ID)
+	}
 
 	// Parse the charge data file
 	chargeData, err := parseChargeFile("../data/OPLS_atom_charge.rtp")
@@ -22,7 +25,7 @@ func main() {
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
 	// Check if the assigned charges are correct
-	//CheckAssignedCharges(&protein, chargeData)
+	// CheckAssignedCharges(&protein, chargeData)
 
 	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
@@ -43,7 +46,9 @@ func main() {
 	TemporaryPlot(RMSD, time)
 	writeRMSD(RMSD)
 	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
-
+	for _, residue := range timepoints[len(timepoints)-1].Residue {
+		fmt.Println(residue.ID)
+	}
 }
 
 func Check(err error) {
