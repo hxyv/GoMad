@@ -43,9 +43,9 @@ func main() {
 
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-	RSMD := CalculateRMSD(timepoints)
-	TemporaryPlot(RSMD, time)
-	writeRMSD(RSMD)
+	RMSD := CalculateRMSD(timepoints)
+	TemporaryPlot(RMSD, time)
+	writeRMSD(RMSD)
 	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
 
 }
