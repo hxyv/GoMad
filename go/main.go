@@ -21,10 +21,6 @@ func main() {
 
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
-	fmt.Println(protein.Residue[0])
-	fmt.Println(protein.Residue[0].Atoms[0])
-	fmt.Println(protein.Residue[0].Atoms[1])
-	fmt.Println(protein.Residue[0].Atoms[2])
 	// Check if the assigned charges are correct
 	//CheckAssignedCharges(&protein, chargeData)
 
