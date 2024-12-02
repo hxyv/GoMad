@@ -64,7 +64,7 @@ func (v *VerletList) BuildVerlet(protein *Protein) {
 	}
 }
 
-func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]AtomChargeData) {
+func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]float64) {
 	for _, residue := range protein.Residue {
 		residueName := residue.Name
 
@@ -76,10 +76,10 @@ func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]
 
 			if residueExists {
 				// Try to get the charge data for this atom
-				atomChargeData, atomExists := residueChargeData[atomName]
+				atomCharge, atomExists := residueChargeData[atomName]
 				if atomExists {
 					// Assign the charge from the charge data
-					atom.charge = atomChargeData.AtomCharge
+					atom.charge = atomCharge
 					continue
 				}
 			}

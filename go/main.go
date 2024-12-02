@@ -16,11 +16,17 @@ func main() {
 	Check(err)
 
 	// Parse the charge data file
-	chargeData, err := parseChargeFile("../data/gromacs43_atom_charge.rtp")
+	chargeData, err := parseChargeFile("../data/OPLS_atom_charge.rtp")
 	Check(err)
 
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
+	fmt.Println(protein.Residue[0])
+	fmt.Println(protein.Residue[0].Atoms[0])
+	fmt.Println(protein.Residue[0].Atoms[1])
+	fmt.Println(protein.Residue[0].Atoms[2])
+	// Check if the assigned charges are correct
+	//CheckAssignedCharges(&protein, chargeData)
 
 	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
@@ -37,9 +43,9 @@ func main() {
 
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-	RSMD := CalculateRMSD(timepoints)
-	TemporaryPlot(RSMD, time)
-	writeRMSD(RSMD)
+	RMSD := CalculateRMSD(timepoints)
+	TemporaryPlot(RMSD, time)
+	writeRMSD(RMSD)
 	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
 
 }
@@ -73,6 +79,37 @@ func printProtein(protein *Protein) {
 		for _, atom := range residue.Atoms {
 			fmt.Printf("    Atom Index: %d, Element: %s, Position: (%.2f, %.2f, %.2f)\n",
 				atom.index, atom.element, atom.position.x, atom.position.y, atom.position.z)
+		}
+	}
+}
+
+func CheckAssignedCharges(protein *Protein, chargeData map[string]map[string]float64) {
+	for _, residue := range protein.Residue {
+		residueName := residue.Name
+
+		// Get the charge data for this residue, if it exists
+		residueChargeData, residueExists := chargeData[residueName]
+
+		if !residueExists {
+			fmt.Printf("Warning: No charge data found for residue %s\n", residueName)
+			continue
+		}
+
+		for _, atom := range residue.Atoms {
+			atomName := atom.element
+
+			// Try to get the charge data for this atom
+			expectedCharge, atomExists := residueChargeData[atomName]
+			if !atomExists {
+				fmt.Printf("Warning: No charge data found for atom %s in residue %s\n", atomName, residueName)
+				continue
+			}
+
+			// Check if the assigned charge matches the expected charge
+			if atom.charge != expectedCharge {
+				fmt.Printf("Discrepancy found: Residue %s, Atom %s, Assigned Charge: %f, Expected Charge: %f\n",
+					residueName, atomName, atom.charge, expectedCharge)
+			}
 		}
 	}
 }
