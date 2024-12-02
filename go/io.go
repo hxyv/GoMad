@@ -37,7 +37,7 @@ func readProteinFromFile(fileName string) (Protein, error) {
 
 		// Process lines that start with "ATOM"
 		if strings.HasPrefix(line, "ATOM") {
-			atom, residueName, ChainID, err := parsePDBLine(line)
+			atom, residueName, residueID, ChainID, err := parsePDBLine(line)
 			if err != nil {
 				return Protein{}, err
 			}
@@ -48,10 +48,11 @@ func readProteinFromFile(fileName string) (Protein, error) {
 				if currentResidue != nil {
 					residues = append(residues, currentResidue)
 				}
-
+				residueIDI, _ := strconv.Atoi(residueID)
 				// otherwise,Create a new Residue object
 				currentResidue = &Residue{
 					Name:    residueName,
+					ID:      residueIDI,
 					ChainID: ChainID,
 					Atoms:   []*Atom{&atom},
 				}
@@ -80,22 +81,22 @@ func readProteinFromFile(fileName string) (Protein, error) {
 }
 
 // Function to parse a PDB line based on spaces
-func parsePDBLine(line string) (Atom, string, string, error) {
+func parsePDBLine(line string) (Atom, string, string, string, error) {
 	fields := strings.Fields(line)
 	var atom Atom
 
 	// Parse coordinates
 	x, err := strconv.ParseFloat(fields[6], 64)
 	if err != nil {
-		return Atom{}, "", "", fmt.Errorf("error parsing x position: %v", err)
+		return Atom{}, "", "", "", fmt.Errorf("error parsing x position: %v", err)
 	}
 	y, err := strconv.ParseFloat(fields[7], 64)
 	if err != nil {
-		return Atom{}, "", "", fmt.Errorf("error parsing y position: %v", err)
+		return Atom{}, "", "", "", fmt.Errorf("error parsing y position: %v", err)
 	}
 	z, err := strconv.ParseFloat(fields[8], 64)
 	if err != nil {
-		return Atom{}, "", "", fmt.Errorf("error parsing z position: %v", err)
+		return Atom{}, "", "", "", fmt.Errorf("error parsing z position: %v", err)
 	}
 
 	// Parse element symbol
@@ -108,10 +109,11 @@ func parsePDBLine(line string) (Atom, string, string, error) {
 	atom.position.z = z
 	atom.element = element
 	atom.index = index
-	// Extract residue name
+	// Extract residue name and ID
 	residueName := fields[3]
+	residueID := fields[5]
 
-	return atom, residueName, ChainID, nil
+	return atom, residueName, residueID, ChainID, nil
 }
 
 func (p *Protein) UpdateMasses(massTable map[string]float64) {
@@ -345,14 +347,14 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 // ////These function are used for read parameter for charge
 // ///////////////
 // ****highest level function****
-func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, error) {
+func parseChargeFile(filename string) (map[string]map[string]float64, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	chargeData := make(map[string]map[string]AtomChargeData)
+	chargeData := make(map[string]map[string]float64)
 	scanner := bufio.NewScanner(file)
 	var currentResidue string
 
@@ -367,22 +369,20 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 		// Check for residue header lines like "[ ALA ]"
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
 			currentResidue = strings.TrimSpace(line[1 : len(line)-1])
-			chargeData[currentResidue] = make(map[string]AtomChargeData)
+			chargeData[currentResidue] = make(map[string]float64)
 			continue
 		}
 
 		// Parse atom data lines
 		fields := strings.Fields(line)
 
-		// Ensure that we have exactly four columns
-		if len(fields) != 4 {
+		// Ensure that we have at least three columns
+		if len(fields) < 3 {
 			return nil, fmt.Errorf("invalid line format: %s", line)
 		}
 
 		atomName := fields[0]
-		atomType := fields[1]
 		atomChargeStr := fields[2]
-		chargeGroupStr := fields[3]
 
 		// Parse atom charge
 		atomCharge, err := strconv.ParseFloat(atomChargeStr, 64)
@@ -390,21 +390,11 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 			return nil, fmt.Errorf("invalid atom charge '%s' in line: %s", atomChargeStr, line)
 		}
 
-		// Parse charge group (can be integer)
-		chargeGroup, err := strconv.Atoi(chargeGroupStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid charge group '%s' in line: %s", chargeGroupStr, line)
-		}
-
 		// Store the charge data
 		if currentResidue == "" {
 			return nil, fmt.Errorf("atom data without residue header: %s", line)
 		}
-		chargeData[currentResidue][atomName] = AtomChargeData{
-			AtomType:    atomType,
-			AtomCharge:  atomCharge,
-			ChargeGroup: chargeGroup,
-		}
+		chargeData[currentResidue][atomName] = atomCharge
 	}
 
 	if err := scanner.Err(); err != nil {

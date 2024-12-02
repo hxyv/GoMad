@@ -627,13 +627,13 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 				atom1 := residue.Atoms[i]
 				if atom1.element == (*dihedralValues).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms)-2; j++ {
-						if residue.Atoms[j].element[0] == (*dihedralValues).atoms[1][0] {
+						if residue.Atoms[j].element == (*dihedralValues).atoms[1] {
 							atom2 := residue.Atoms[j]
 							for k := j + 1; k < len(residue.Atoms)-1; k++ {
-								if residue.Atoms[k].element[0] == (*dihedralValues).atoms[2][0] {
+								if residue.Atoms[k].element == (*dihedralValues).atoms[2] {
 									atom3 := residue.Atoms[k]
 									for l := k + 1; l < len(residue.Atoms); l++ {
-										if residue.Atoms[l].element[0] == (*dihedralValues).atoms[3][0] {
+										if residue.Atoms[l].element == (*dihedralValues).atoms[3] {
 											atom4 := residue.Atoms[l]
 											phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
 											if math.IsNaN(phi) {
@@ -699,6 +699,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 											}
 										}
 									}
+                  
 									if (*dihedralValues).atoms[3] == "+N" && w != len(p.Residue)-1 {
 										atom4 := p.Residue[w+1].Atoms[0]
 										phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
@@ -707,7 +708,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 										}
 										parameterList := SearchParameter(4, dihedralParameter, atom1, atom2, atom3, atom4)
 										if len(parameterList) != 1 {
-
 											force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
 											dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
@@ -766,7 +766,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 									}
 								}
-
 							}
 
 						}
@@ -789,6 +788,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				sym += 1
 				continue
 			}
+
 			if parameterData.atomPair[i].atomName[j][0] == '-' {
 				if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
 					sym += 1
@@ -801,6 +801,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 					continue
 				}
 			}
+
 			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
 				break
 			}
@@ -820,6 +821,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				sym += 1
 				continue
 			}
+
 			if parameterData.atomPair[i].atomName[value-j-1][0] == '-' {
 				if atoms[value-j-1].element == string(parameterData.atomPair[i].atomName[value-j-1][1:]) {
 					sym += 1
@@ -832,6 +834,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 					continue
 				}
 			}
+
 			if atoms[j].element != parameterData.atomPair[i].atomName[value-j-1] {
 				break
 			}
