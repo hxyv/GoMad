@@ -118,7 +118,6 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 					totalEnergy += LJPotentialEnergy
 					// Calculate the Lennard-Jones force between atom1 and atom2
 					LJForce := CalculateLJForce(atom1, atom2, parameterList[0], parameterList[1], r)
-
 					// Update the force map for atom1
 					forceMap[atom1.index].x += LJForce.x
 					forceMap[atom1.index].y += LJForce.y
