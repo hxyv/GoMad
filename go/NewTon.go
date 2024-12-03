@@ -8,7 +8,7 @@ import (
 // SimulateGravity
 // Input: an initial Universe object, a number of generations, and a float time.
 // Output: a slice of numGens + 1 Universes resulting from simulating gravity over numGens generations, where the time interval between generations is specified by time.
-func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
+func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
 	timePoints := make([]Protein, 0)
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
@@ -17,7 +17,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 	CheckPosition(timePoints[0])
 	fmt.Println("after first check")
 	for i := 0; i < iteration; i++ {
-		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
 
 		CheckPosition(timePoints[len(timePoints)-1])
@@ -33,10 +33,10 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 // UpdateUniverse
 // Input: a Universe object and a float time.
 // Output: a Universe object resulting from a single step according to the gravity simulation, using a time interval specified by time.
-func UpdateProtein(currentProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (Protein, float64) {
+func UpdateProtein(currentProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (Protein, float64) {
 	newProtein := CopyProtein(&currentProtein)
 
-	energy, forceMap := CombineEnergyAndForce(newProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+	energy, forceMap := CombineEnergyAndForce(newProtein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 
 	forceIndex := 0
 

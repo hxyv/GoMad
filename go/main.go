@@ -24,7 +24,9 @@ func main() {
 	// Check if the assigned charges are correct
 	//CheckAssignedCharges(&protein, chargeData)
 
-	residueParameterValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
 	Check(error)
 	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
 	Check(error)
@@ -37,8 +39,8 @@ func main() {
 	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
 	Check(error)
 
-	initialProtein := PerformEnergyMinimization(&protein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-	timepoints := SimulateMD(*initialProtein, time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+	initialProtein := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+	timepoints := SimulateMD(*initialProtein, time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RMSD := CalculateRMSD(timepoints)
 	TemporaryPlot(RMSD, time)
 	writeRMSD(RMSD)
