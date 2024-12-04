@@ -11,13 +11,11 @@ import (
 func CalculateElectricPotentialEnergy(a1, a2 *Atom, r float64) float64 {
 	chargeMagnitude := a1.charge * a2.charge
 
-	electricPotentialEnergy := 0.0
 	if chargeMagnitude < 0.0 {
-		electricPotentialEnergy = -chargeMagnitude / (4 * math.Pi * epsilon * r)
-	} else {
-		electricPotentialEnergy = chargeMagnitude / (4 * math.Pi * epsilon * r)
+		return -chargeMagnitude / (4 * math.Pi * epsilon * r)
 	}
-	return electricPotentialEnergy
+
+	return chargeMagnitude / (4 * math.Pi * epsilon * r)
 }
 
 // A: coefficient 1
@@ -26,8 +24,11 @@ func CalculateElectricPotentialEnergy(a1, a2 *Atom, r float64) float64 {
 func CalculateLJPotentialEnergy(B, A, r float64) float64 {
 	r_6 := math.Pow(r, 6)
 	r_12 := r_6 * r_6
-
-	return (A / r_12) - (B / r_6)
+	LJ := (A / r_12) - (B / r_6)
+	if LJ < 0 {
+		return -LJ
+	}
+	return LJ
 }
 
 func NewVerletList() *VerletList {
