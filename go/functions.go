@@ -70,9 +70,9 @@ func magnitude(vector TriTuple) float64 {
 	return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
 }
 
-func CombineEnergyAndForce(p *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
+func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	// Calculate total energy and forces of bonded interactions
-	bondedEnergy, bondedForceMap := CalculateTotalEnergyForce(p, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+	bondedEnergy, bondedForceMap := CalculateTotalEnergyForce(p, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 
 	// Calculate total energy and forces of unbonded interactions
 	unbondedEnergy, unbondedForceMap := CalculateTotalUnbondedEnergyForce(p, nonbondParameter)
@@ -108,14 +108,14 @@ func CombineEnergyAndForce(p *Protein, residueParameterValue map[string]residueP
 	return totalEnergy, totalForceMap
 }
 
-func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	iteration := 10
+func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
+	iteration := 50
 	// set maximum displacement
 	h := 0.01
 
 	for i := 0; i < iteration; i++ {
 		// Combine energies and forces
-		totalEnergy, totalForceMap := CombineEnergyAndForce(currentProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		totalEnergy, totalForceMap := CombineEnergyAndForce(currentProtein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		fmt.Printf("Iteration %d: Total Energy = %f\n", i, totalEnergy)
 
 		tempProtein := CopyProtein(currentProtein)
@@ -124,7 +124,7 @@ func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue ma
 		SteepestDescent(tempProtein, h, totalForceMap)
 
 		// Calculate total energy of updated protein
-		newTotalEnergy, _ := CombineEnergyAndForce(tempProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		newTotalEnergy, _ := CombineEnergyAndForce(tempProtein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		fmt.Printf("Iteration %d: New Total Energy = %f\n", i, newTotalEnergy)
 
 		// If total energy decreases, accept the changes of positions and increase maximum displacement h
@@ -140,7 +140,7 @@ func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue ma
 	return currentProtein
 }
 
-func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
+func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	forceMap := make(map[int]*TriTuple)
 
 	// range over each residue in protein
@@ -155,7 +155,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 		// Calculate bondstretch energy
 		// range over each bond
 
-		for _, bondPairs := range residueParameterValue[residue.Name].bonds {
+		for _, bondPairs := range residueParameterBondValue[residue.Name].bonds {
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
 				if atom1.element == (*bondPairs).atoms[0] {
@@ -209,7 +209,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 						}
 					}
 
-					if (*bondPairs).atoms[1][0] == '+' && w != len(p.Residue)-1 {
+					if (*bondPairs).atoms[1] == "N" && w != len(p.Residue)-1 {
 						for k := range p.Residue[w+1].Atoms {
 							if p.Residue[w+1].Atoms[k].element == "N" {
 
@@ -222,7 +222,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 									continue
 								}
 
-								parameterList := SearchParameter(2, bondParameter, atom1, atom2)
+								parameterList := []float64{0.13830, 354803.2}
 								if len(parameterList) != 1 {
 
 									force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
@@ -265,7 +265,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 		}
 
-		for _, angleTris := range residueParameterValue[residue.Name].angles {
+		for _, angleTris := range residueParameterOtherValue[residue.Name].angles {
 			if (*angleTris).atoms[0][0] == '-' {
 				if w != 0 {
 					for a := range p.Residue[w-1].Atoms {
@@ -282,7 +282,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 											if math.IsNaN(theta) {
 												continue
 											}
-											parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
+											parameterList := []float64{119.200, 418.400}
 											if len(parameterList) != 1 {
 
 												force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
@@ -409,7 +409,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 										if math.IsNaN(theta) {
 											continue
 										}
-										parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
+										parameterList := []float64{120.900, 669.440}
 										if len(parameterList) != 1 {
 
 											force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
@@ -466,7 +466,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 			}
 		}
 
-		for _, dihedralValues := range residueParameterValue[residue.Name].dihedrals {
+		for _, dihedralValues := range residueParameterOtherValue[residue.Name].dihedrals {
 			if (*dihedralValues).atoms[0] == "-CA" && w != 0 {
 				for i := range p.Residue[w-1].Atoms {
 					if p.Residue[w-1].Atoms[i].element == "CA" {
@@ -481,7 +481,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 								if math.IsNaN(phi) {
 									continue
 								}
-								parameterList := SearchParameter(4, dihedralParameter, atom1, atom2, atom3, atom4)
+								parameterList := []float64{180.0, 6.06680}
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
@@ -701,7 +701,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 										if math.IsNaN(phi) {
 											continue
 										}
-										parameterList := SearchParameter(4, dihedralParameter, atom1, atom2, atom3, atom4)
+										parameterList := []float64{180.0, 15.167}
 										if len(parameterList) != 1 {
 											force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
@@ -784,18 +784,20 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				continue
 			}
 
-			if parameterData.atomPair[i].atomName[j][0] == '-' {
-				if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
-					sym += 1
-					continue
+			/*
+				if parameterData.atomPair[i].atomName[j][0] == '-' {
+					if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
+						sym += 1
+						continue
+					}
 				}
-			}
-			if parameterData.atomPair[i].atomName[j][0] == '+' {
-				if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
-					sym += 1
-					continue
+				if parameterData.atomPair[i].atomName[j][0] == '+' {
+					if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
+						sym += 1
+						continue
+					}
 				}
-			}
+			*/
 
 			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
 				break
