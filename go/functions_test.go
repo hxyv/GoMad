@@ -288,22 +288,96 @@ func TestDot(t *testing.T) {
 
 	for i, inputFile := range inputFiles {
 		// read input
-		pair, _ := readFileline("Tests/magnitude/" + "input/" + inputFile.Name())
+		pair, _ := readFileline("Tests/Dot/" + "input/" + inputFile.Name())
 		var v1 TriTuple
 		v1.x = convertStringToFloatSlice(pair[0])[0]
 		v1.y = convertStringToFloatSlice(pair[0])[1]
 		v1.z = convertStringToFloatSlice(pair[0])[2]
 
+		var v2 TriTuple
+		v2.x = convertStringToFloatSlice(pair[1])[0]
+		v2.y = convertStringToFloatSlice(pair[1])[1]
+		v2.z = convertStringToFloatSlice(pair[1])[2]
+
 		// function
-		result := magnitude(v1)
+		result := v1.dot(v2)
 
 		// read output
-		out, _ := readFileline("Tests/magnitude" + "/output/" + outputFiles[i].Name())
+		out, _ := readFileline("Tests/Dot" + "/output/" + outputFiles[i].Name())
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
 		if realResult != result {
-			t.Errorf("magnitude() = %v, want %v", result, realResult)
+			t.Errorf("Dot() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestBuildNormalVector(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/BuildNormalVector" + "/input")
+	outputFiles := ReadDirectory("Tests/BuildNormalVector" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/BuildNormalVector/" + "input/" + inputFile.Name())
+		var v1 TriTuple
+		v1.x = convertStringToFloatSlice(pair[0])[0]
+		v1.y = convertStringToFloatSlice(pair[0])[1]
+		v1.z = convertStringToFloatSlice(pair[0])[2]
+
+		var v2 TriTuple
+		v2.x = convertStringToFloatSlice(pair[1])[0]
+		v2.y = convertStringToFloatSlice(pair[1])[1]
+		v2.z = convertStringToFloatSlice(pair[1])[2]
+
+		// function
+		result := BuildNormalVector(v1, v2)
+		// read output
+		out, _ := readFileline("Tests/Cross" + "/output/" + outputFiles[i].Name())
+		var realResult TriTuple
+		realResult.x = convertStringToFloatSlice(out[0])[0]
+		realResult.y = convertStringToFloatSlice(out[0])[1]
+		realResult.z = convertStringToFloatSlice(out[0])[2]
+
+		if realResult != result {
+			t.Errorf("BuildNormalVector() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestCalculateAngle(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateAngle" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateAngle" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateAngle/" + "input/" + inputFile.Name())
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[0])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[0])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[0])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom3 Atom
+		atom3.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom3.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom3.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		// function
+		result := CalculateAngle(&atom1, &atom2, &atom3)
+		// read output
+		out, _ := readFileline("Tests/CalculateAngle" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult = convertStringToFloatSlice(out[0])[0]
+
+		if realResult != result {
+			t.Errorf("CalculateAngle() = %v, want %v", result, realResult)
 		}
 
 	}
