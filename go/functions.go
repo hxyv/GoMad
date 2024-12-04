@@ -886,7 +886,7 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 		z: (atom1.position.z - atom2.position.z) / bondLen,
 	}
 
-	fScale := -k * (r - r_0*10)
+	fScale := k * (r - r_0*10)
 
 	// unit: g/s^2/mol/A
 	force := TriTuple{

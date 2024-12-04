@@ -78,6 +78,7 @@
    HG2    opls_140    0.060     3
     CD    opls_235    0.500     4
    OE1    opls_236   -0.500     4
+   OE2    opls_236   -0.500     4~
    NE2    opls_237   -0.760     5
   HE21    opls_240    0.380     5
   HE22    opls_240    0.380     5
@@ -144,7 +145,7 @@
   HG21    opls_140    0.060     4
   HG22    opls_140    0.060     4
   HG23    opls_140    0.060     4
-    CD    opls_135   -0.180     5
+   CD1    opls_135   -0.180     5
    HD1    opls_140    0.060     5
    HD2    opls_140    0.060     5
    HD3    opls_140    0.060     5

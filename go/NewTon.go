@@ -13,13 +13,12 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue,
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 100 // 100
+	iteration := 10 // 100
 	CheckPosition(timePoints[0])
 	fmt.Println("after first check")
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
-
 		CheckPosition(timePoints[len(timePoints)-1])
 		totalTime += time
 		if totalTime > cerition {
