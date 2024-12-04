@@ -10,23 +10,23 @@ func CalculateBondStretchEnergy(k, r, r_0 float64) float64 {
 }
 
 func CalculateAnglePotentialEnergy(k, theta, theta_0 float64) float64 {
-	return 0.5 * k * (theta - theta_0) / 360 * math.Pi * (theta - theta_0) / 360 * math.Pi
+	return 0.5 * k * (theta - theta_0) / 180 * math.Pi * (theta - theta_0) / 180 * math.Pi
 }
 
 func CalculateProperDihedralAngleEnergy(kd, phi, pn, phase float64) float64 {
-	return 0.5 * kd * (1 + math.Cos(pn*phi-phase/360*math.Pi))
+	return 0.5 * kd * (1 + math.Cos(pn*phi-phase/180*math.Pi))
 }
 
 func CalculateAngle(atom1, atom2, atom3 *Atom) float64 {
-	vector1 := CalculateVector(atom2, atom1)
-	vector2 := CalculateVector(atom3, atom1)
+	vector1 := CalculateVector(atom1, atom2)
+	vector2 := CalculateVector(atom3, atom2)
 
 	upperValue := vector1.dot(vector2)
 	lowerValue := Distance(atom1.position, atom2.position) * Distance(atom2.position, atom3.position)
 
 	value := upperValue / lowerValue
 
-	return math.Acos(value) / math.Pi * 360
+	return math.Abs(math.Acos(value) / math.Pi * 180)
 }
 
 func Distance(p1, p2 TriTuple) float64 {
@@ -44,13 +44,12 @@ func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
 
 	plane1 := BuildNormalVector(vector1, vector2)
 	plane2 := BuildNormalVector(vector2, vector3)
-	plane3 := BuildNormalVector(plane1, plane2)
 
 	x := plane1.dot(plane2)
-	y := plane3.dot(vector2) / magnitude(vector2)
-	angle := math.Atan2(y, x)
+	y := magnitude(plane1) * magnitude(plane2)
+	angle := math.Acos(x / y)
 
-	return angle * (180 / math.Pi)
+	return math.Abs(angle * (180 / math.Pi))
 }
 
 func BuildNormalVector(vector1, vector2 TriTuple) TriTuple {
@@ -481,7 +480,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 								if math.IsNaN(phi) {
 									continue
 								}
-								parameterList := []float64{180.0, 6.06680}
+								parameterList := []float64{180.0, 6.06680, 2}
 								if len(parameterList) != 1 {
 
 									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
@@ -701,7 +700,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 										if math.IsNaN(phi) {
 											continue
 										}
-										parameterList := []float64{180.0, 15.167}
+										parameterList := []float64{180.0, 15.167, 2}
 										if len(parameterList) != 1 {
 											force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
@@ -900,8 +899,8 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 }
 
 func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (TriTuple, TriTuple, TriTuple) {
-	der_that_cos := (-1) * (1 / math.Sin(theta/360*math.Pi))
-	der_U_thate := k * (theta - theta_0) / 360 * math.Pi
+	der_that_cos := (-1) * (1 / math.Sin(theta/180*math.Pi))
+	der_U_thate := k * (theta - theta_0) / 180 * math.Pi
 
 	if math.IsNaN(der_that_cos) {
 		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
@@ -954,7 +953,7 @@ func DerivateAnglePositionZ(atom1, atom2, atom3 *Atom, theta float64) float64 {
 }
 
 func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, atom3, atom4 *Atom) (TriTuple, TriTuple, TriTuple, TriTuple) {
-	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase/360*math.Pi))
+	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase/180*math.Pi))
 	der_phi_cos := -1 / math.Sin(phi)
 
 	vector12 := CalculateVector(atom1, atom2)
