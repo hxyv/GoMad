@@ -44,13 +44,12 @@ func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
 
 	plane1 := BuildNormalVector(vector1, vector2)
 	plane2 := BuildNormalVector(vector2, vector3)
-	plane3 := BuildNormalVector(plane1, plane2)
 
 	x := plane1.dot(plane2)
-	y := plane3.dot(vector2) / magnitude(vector2)
-	angle := math.Atan2(y, x)
+	y := magnitude(plane1) * magnitude(plane2)
+	angle := math.Acos(x / y)
 
-	return angle * (180 / math.Pi)
+	return math.Abs(angle * (180 / math.Pi))
 }
 
 func BuildNormalVector(vector1, vector2 TriTuple) TriTuple {
