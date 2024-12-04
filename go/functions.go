@@ -845,10 +845,6 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 
 	return []float64{0.0}
 }
-func CalculateNetForce(a int) TriTuple {
-
-	return TriTuple{x: 1.0, y: 1.0, z: 1.0}
-}
 
 func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *Protein {
 	for i := range protein.Residue {

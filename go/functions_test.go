@@ -461,19 +461,84 @@ func TestCalculateAnglePotentialEnergy(t *testing.T) {
 		pair, _ := readFileline("Tests/CalculateAnglePotentialEnergy/" + "input/" + inputFile.Name())
 
 		k := convertStringToFloatSlice(pair[0])[0]
-		r := convertStringToFloatSlice(pair[0])[1]
-		r_0 := convertStringToFloatSlice(pair[0])[2]
+		theta := convertStringToFloatSlice(pair[0])[1]
+		theta_0 := convertStringToFloatSlice(pair[0])[2]
 
 		// function
-		result := CalculateBondStretchEnergy(k, r, r_0)
+		result := CalculateAnglePotentialEnergy(k, theta, theta_0)
 
 		// read output
 		out, _ := readFileline("Tests/CalculateAnglePotentialEnergy" + "/output/" + outputFiles[i].Name())
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
-		if realResult != math.Round(result) {
+		if realResult*math.Pi*math.Pi != result {
 			t.Errorf("CalculateAnglePotentialEnergy() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestCalculateProperDihedralAngleEnergy(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateProperDihedralAngleEnergy" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateProperDihedralAngleEnergy" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateProperDihedralAngleEnergy/" + "input/" + inputFile.Name())
+
+		kd := convertStringToFloatSlice(pair[0])[0]
+		phi := convertStringToFloatSlice(pair[0])[1] * math.Pi
+		pn := convertStringToFloatSlice(pair[0])[2]
+		phase := convertStringToFloatSlice(pair[0])[3]
+
+		// function
+		result := CalculateProperDihedralAngleEnergy(kd, phi, pn, phase)
+
+		// read output
+		out, _ := readFileline("Tests/CalculateProperDihedralAngleEnergy" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult = convertStringToFloatSlice(out[0])[0]
+
+		if realResult != result {
+			t.Errorf("CalculateProperDihedralAngleEnergy() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestCalculateBondForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateBondForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateBondForce" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateBondForce/" + "input/" + inputFile.Name())
+		k := convertStringToFloatSlice(pair[0])[0]
+		r_0 := convertStringToFloatSlice(pair[0])[1]
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		r := Distance(atom1.position, atom2.position)
+		// function
+		result := CalculateBondForce(k, r, r_0, &atom1, &atom2)
+		// read output
+		out, _ := readFileline("Tests/CalculateBondForce" + "/output/" + outputFiles[i].Name())
+		var realResult TriTuple
+		realResult.x = convertStringToFloatSlice(out[0])[0]
+		realResult.y = convertStringToFloatSlice(out[0])[1]
+		realResult.z = convertStringToFloatSlice(out[0])[2]
+
+		if realResult != result {
+			t.Errorf("CalculateBondForce() = %v, want %v", result, realResult)
 		}
 
 	}
