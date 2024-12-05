@@ -967,11 +967,26 @@ func ReadOneAtom(line []string) Atom {
 	return atom
 }
 
-/*
-func ReadOneResidue(lines [][]string) Residue {
+func ReadOneResidue(lines []string) Residue {
 	var residue Residue
+	var atoms []*Atom
+	for i, _ := range lines {
+		line := strings.Split(lines[i], " ")
+		if i == 0 {
+			residue.Name = line[0]
+			residue.ID, _ = strconv.Atoi(line[1])
+			residue.ChainID = line[2]
+			continue
+		}
+
+		atom := ReadOneAtom(line)
+		atoms = append(atoms, &atom)
+
+	}
+	residue.Atoms = atoms
+	return residue
 }
-*/
+
 /*
 func ReadResidues(filename string) ([]Residue, error) {
 	lines, err := readFileline(filename)
