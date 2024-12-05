@@ -845,10 +845,6 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 
 	return []float64{0.0}
 }
-func CalculateNetForce(a int) TriTuple {
-
-	return TriTuple{x: 1.0, y: 1.0, z: 1.0}
-}
 
 func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *Protein {
 	for i := range protein.Residue {
@@ -956,9 +952,13 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase/180*math.Pi))
 	der_phi_cos := -1 / math.Sin(phi)
 
-	vector12 := CalculateVector(atom1, atom2)
-	vector32 := CalculateVector(atom3, atom2)
-	vector43 := CalculateVector(atom4, atom3)
+	if math.IsNaN(der_phi_cos) || math.IsNaN(der_U_phi) {
+		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
+	}
+
+	vector12 := CalculateVector(atom2, atom1)
+	vector32 := CalculateVector(atom2, atom3)
+	vector43 := CalculateVector(atom3, atom4)
 
 	v_t := Cross(vector12, vector32)
 	v_u := Cross(vector43, vector32)

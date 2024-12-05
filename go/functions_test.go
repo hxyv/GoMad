@@ -239,9 +239,12 @@ func TestCalculateDerivate(t *testing.T) {
 		v2.y = convertStringToFloatSlice(pair[1])[1]
 		v2.z = convertStringToFloatSlice(pair[1])[2]
 
-		phi := convertStringToFloatSlice(pair[2])[0]
+		phi := convertStringToFloatSlice(pair[0])[0]
 		// function
 		der1, der2, der3 := CalculateDerivate(v1, v2, phi)
+		der1 = math.Round(der1*math.Pow10(4)) / math.Pow10(4)
+		der2 = math.Round(der2*math.Pow10(4)) / math.Pow10(4)
+		der3 = math.Round(der3*math.Pow10(4)) / math.Pow10(4)
 
 		// read output
 		out, _ := readFileline("Tests/CalculateDerivate" + "/output/" + outputFiles[i].Name())
@@ -250,7 +253,7 @@ func TestCalculateDerivate(t *testing.T) {
 		result3 := convertStringToFloatSlice(out[0])[2]
 
 		if der1 != result1 || der2 != result2 || der3 != result3 {
-			t.Errorf("CalculateDerivate() = %v. %v, %v, want (%v, %v, %v)", der1, der2, der3, result1, result2, result3)
+			t.Errorf("CalculateDerivate() = %v, %v, %v, want (%v, %v, %v)", der1, der2, der3, result1, result2, result3)
 		}
 
 	}
@@ -461,19 +464,333 @@ func TestCalculateAnglePotentialEnergy(t *testing.T) {
 		pair, _ := readFileline("Tests/CalculateAnglePotentialEnergy/" + "input/" + inputFile.Name())
 
 		k := convertStringToFloatSlice(pair[0])[0]
-		r := convertStringToFloatSlice(pair[0])[1]
-		r_0 := convertStringToFloatSlice(pair[0])[2]
+		theta := convertStringToFloatSlice(pair[0])[1]
+		theta_0 := convertStringToFloatSlice(pair[0])[2]
 
 		// function
-		result := CalculateBondStretchEnergy(k, r, r_0)
+		result := CalculateAnglePotentialEnergy(k, theta, theta_0)
 
 		// read output
 		out, _ := readFileline("Tests/CalculateAnglePotentialEnergy" + "/output/" + outputFiles[i].Name())
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
-		if realResult != math.Round(result) {
+		if realResult*math.Pi*math.Pi != result {
 			t.Errorf("CalculateAnglePotentialEnergy() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestCalculateProperDihedralAngleEnergy(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateProperDihedralAngleEnergy" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateProperDihedralAngleEnergy" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateProperDihedralAngleEnergy/" + "input/" + inputFile.Name())
+
+		kd := convertStringToFloatSlice(pair[0])[0]
+		phi := convertStringToFloatSlice(pair[0])[1] * math.Pi
+		pn := convertStringToFloatSlice(pair[0])[2]
+		phase := convertStringToFloatSlice(pair[0])[3]
+
+		// function
+		result := CalculateProperDihedralAngleEnergy(kd, phi, pn, phase)
+
+		// read output
+		out, _ := readFileline("Tests/CalculateProperDihedralAngleEnergy" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult = convertStringToFloatSlice(out[0])[0]
+
+		if realResult != result {
+			t.Errorf("CalculateProperDihedralAngleEnergy() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestCalculateBondForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateBondForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateBondForce" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateBondForce/" + "input/" + inputFile.Name())
+		k := convertStringToFloatSlice(pair[0])[0]
+		r_0 := convertStringToFloatSlice(pair[0])[1]
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		r := Distance(atom1.position, atom2.position)
+		// function
+		result := CalculateBondForce(k, r, r_0, &atom1, &atom2)
+		// read output
+		out, _ := readFileline("Tests/CalculateBondForce" + "/output/" + outputFiles[i].Name())
+		var realResult TriTuple
+		realResult.x = math.Round(convertStringToFloatSlice(out[0])[0] * math.Pow10(4))
+		realResult.y = math.Round(convertStringToFloatSlice(out[0])[1] * math.Pow10(4))
+		realResult.z = math.Round(convertStringToFloatSlice(out[0])[2] * math.Pow10(4))
+
+		if realResult.x != math.Round(result.x*math.Pow10(4)) || realResult.y != math.Round(result.y*math.Pow10(4)) || realResult.z != math.Round(result.z*math.Pow10(4)) {
+			t.Errorf("CalculateBondForce() = %v(%v ,%v, %v), want %v", result, math.Round(result.x*math.Pow10(4)), math.Round(result.y*math.Pow10(4)), math.Round(result.z*math.Pow10(4)), realResult)
+		}
+
+	}
+}
+
+func TestCalculateAngleForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateAngleForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateAngleForce" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateAngleForce/" + "input/" + inputFile.Name())
+		k := convertStringToFloatSlice(pair[0])[0]
+		theta_0 := convertStringToFloatSlice(pair[0])[1]
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		var atom3 Atom
+		atom3.position.x = convertStringToFloatSlice(pair[3])[0]
+		atom3.position.y = convertStringToFloatSlice(pair[3])[1]
+		atom3.position.z = convertStringToFloatSlice(pair[3])[2]
+
+		theta := CalculateAngle(&atom1, &atom2, &atom3)
+		// function
+		result1, result2, result3 := CalculateAngleForce(k, theta, theta_0, &atom1, &atom2, &atom3)
+		result1.x = math.Round(result1.x*math.Pow10(8)) / math.Pow10(8)
+		result1.y = math.Round(result1.y*math.Pow10(8)) / math.Pow10(8)
+		result1.z = math.Round(result1.z*math.Pow10(8)) / math.Pow10(8)
+		result2.x = math.Round(result2.x*math.Pow10(8)) / math.Pow10(8)
+		result2.y = math.Round(result2.y*math.Pow10(8)) / math.Pow10(8)
+		result2.z = math.Round(result2.z*math.Pow10(8)) / math.Pow10(8)
+		result3.x = math.Round(result3.x*math.Pow10(8)) / math.Pow10(8)
+		result3.y = math.Round(result3.y*math.Pow10(8)) / math.Pow10(8)
+		result3.z = math.Round(result3.z*math.Pow10(8)) / math.Pow10(8)
+
+		// read output
+		out, _ := readFileline("Tests/CalculateAngleForce" + "/output/" + outputFiles[i].Name())
+		var realResult1, realResult2, realResult3 TriTuple
+		realResult1.x = convertStringToFloatSlice(out[0])[0]
+		realResult1.y = convertStringToFloatSlice(out[0])[1]
+		realResult1.z = convertStringToFloatSlice(out[0])[2]
+
+		realResult2.x = convertStringToFloatSlice(out[1])[0]
+		realResult2.y = convertStringToFloatSlice(out[1])[1]
+		realResult2.z = convertStringToFloatSlice(out[1])[2]
+
+		realResult3.x = convertStringToFloatSlice(out[2])[0]
+		realResult3.y = convertStringToFloatSlice(out[2])[1]
+		realResult3.z = convertStringToFloatSlice(out[2])[2]
+
+		if result1 != realResult1 || result2 != realResult2 || result3 != realResult3 {
+			t.Errorf("CalculateAngleForce() = (%v ,%v, %v), want (%v, %v, %v)", result1, result2, result3, realResult1, realResult2, realResult3)
+		}
+
+	}
+}
+
+func TestDerivateAnglePositionX(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/DerivateAnglePositionX" + "/input")
+	outputFiles := ReadDirectory("Tests/DerivateAnglePositionX" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/DerivateAnglePositionX/" + "input/" + inputFile.Name())
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[0])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[0])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[0])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom3 Atom
+		atom3.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom3.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom3.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		theta := CalculateAngle(&atom1, &atom2, &atom3)
+		// function
+		result := math.Round(DerivateAnglePositionX(&atom1, &atom2, &atom3, theta)*math.Pow10(4)) / math.Pow10(4)
+		// read output
+		out, _ := readFileline("Tests/DerivateAnglePositionX" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult = convertStringToFloatSlice(out[0])[0]
+
+		if realResult != result {
+			t.Errorf("DerivateAnglePositionX() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestDerivateAnglePositionY(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/DerivateAnglePositionY" + "/input")
+	outputFiles := ReadDirectory("Tests/DerivateAnglePositionY" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/DerivateAnglePositionY/" + "input/" + inputFile.Name())
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[0])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[0])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[0])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom3 Atom
+		atom3.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom3.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom3.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		theta := CalculateAngle(&atom1, &atom2, &atom3)
+		// function
+		result := math.Round(DerivateAnglePositionY(&atom1, &atom2, &atom3, theta)*math.Pow10(4)) / math.Pow10(4)
+		// read output
+		out, _ := readFileline("Tests/DerivateAnglePositionY" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult = convertStringToFloatSlice(out[0])[0]
+
+		if realResult != result {
+			t.Errorf("DerivateAnglePositionY() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestDerivateAnglePositionZ(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/DerivateAnglePositionZ" + "/input")
+	outputFiles := ReadDirectory("Tests/DerivateAnglePositionZ" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/DerivateAnglePositionZ/" + "input/" + inputFile.Name())
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[0])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[0])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[0])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom3 Atom
+		atom3.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom3.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom3.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		theta := CalculateAngle(&atom1, &atom2, &atom3)
+		// function
+		result := math.Round(DerivateAnglePositionZ(&atom1, &atom2, &atom3, theta)*math.Pow10(4)) / math.Pow10(4)
+		// read output
+		out, _ := readFileline("Tests/DerivateAnglePositionZ" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult = convertStringToFloatSlice(out[0])[0]
+
+		if realResult != result {
+			t.Errorf("DerivateAnglePositionZ() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
+func TestCalculateProperDihedralsForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateProperDihedralsForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateProperDihedralsForce" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/CalculateProperDihedralsForce/" + "input/" + inputFile.Name())
+		//kd, phi, pn, phase
+		kd := convertStringToFloatSlice(pair[0])[0]
+		pn := convertStringToFloatSlice(pair[0])[1]
+		phase := convertStringToFloatSlice(pair[0])[2]
+
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[1])[2]
+
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[2])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[2])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[2])[2]
+
+		var atom3 Atom
+		atom3.position.x = convertStringToFloatSlice(pair[3])[0]
+		atom3.position.y = convertStringToFloatSlice(pair[3])[1]
+		atom3.position.z = convertStringToFloatSlice(pair[3])[2]
+
+		var atom4 Atom
+		atom4.position.x = convertStringToFloatSlice(pair[4])[0]
+		atom4.position.y = convertStringToFloatSlice(pair[4])[1]
+		atom4.position.z = convertStringToFloatSlice(pair[4])[2]
+
+		phi := CalculateDihedralAngle(&atom1, &atom2, &atom3, &atom4)
+		// function
+		result1, result2, result3, result4 := CalculateProperDihedralsForce(kd, phi, pn, phase, &atom1, &atom2, &atom3, &atom4)
+
+		result1.x = math.Round(result1.x*math.Pow10(8)) / math.Pow10(8)
+		result1.y = math.Round(result1.y*math.Pow10(8)) / math.Pow10(8)
+		result1.z = math.Round(result1.z*math.Pow10(8)) / math.Pow10(8)
+		result2.x = math.Round(result2.x*math.Pow10(8)) / math.Pow10(8)
+		result2.y = math.Round(result2.y*math.Pow10(8)) / math.Pow10(8)
+		result2.z = math.Round(result2.z*math.Pow10(8)) / math.Pow10(8)
+		result3.x = math.Round(result3.x*math.Pow10(8)) / math.Pow10(8)
+		result3.y = math.Round(result3.y*math.Pow10(8)) / math.Pow10(8)
+		result3.z = math.Round(result3.z*math.Pow10(8)) / math.Pow10(8)
+		result4.x = math.Round(result4.x*math.Pow10(8)) / math.Pow10(8)
+		result4.y = math.Round(result4.y*math.Pow10(8)) / math.Pow10(8)
+		result4.z = math.Round(result4.z*math.Pow10(8)) / math.Pow10(8)
+
+		// read output
+		out, _ := readFileline("Tests/CalculateProperDihedralsForce" + "/output/" + outputFiles[i].Name())
+		var realResult1, realResult2, realResult3, realResult4 TriTuple
+		realResult1.x = convertStringToFloatSlice(out[0])[0]
+		realResult1.y = convertStringToFloatSlice(out[0])[1]
+		realResult1.z = convertStringToFloatSlice(out[0])[2]
+
+		realResult2.x = convertStringToFloatSlice(out[1])[0]
+		realResult2.y = convertStringToFloatSlice(out[1])[1]
+		realResult2.z = convertStringToFloatSlice(out[1])[2]
+
+		realResult3.x = convertStringToFloatSlice(out[2])[0]
+		realResult3.y = convertStringToFloatSlice(out[2])[1]
+		realResult3.z = convertStringToFloatSlice(out[2])[2]
+
+		realResult4.x = convertStringToFloatSlice(out[3])[0]
+		realResult4.y = convertStringToFloatSlice(out[3])[1]
+		realResult4.z = convertStringToFloatSlice(out[3])[2]
+
+		if result1 != realResult1 || result2 != realResult2 || result3 != realResult3 || result4 != realResult4 {
+			t.Errorf("CalculateProperDihedralsForce() = (%v ,%v, %v, %v), want (%v, %v, %v, %v)", result1, result2, result3, result4, realResult1, realResult2, realResult3, realResult4)
 		}
 
 	}
@@ -621,27 +938,53 @@ func ReadAtoms(filename string) ([]Atom, error) {
 		if len(line) != 16 {
 			panic("Error: number of vaiables in atom input do not match!")
 		}
-		var atom Atom
-		atom.index, _ = strconv.Atoi(line[0])
-		atom.position.x, _ = strconv.ParseFloat(line[1], 64)
-		atom.position.y, _ = strconv.ParseFloat(line[2], 64)
-		atom.position.z, _ = strconv.ParseFloat(line[3], 64)
-		atom.velocity.x, _ = strconv.ParseFloat(line[4], 64)
-		atom.velocity.y, _ = strconv.ParseFloat(line[5], 64)
-		atom.velocity.z, _ = strconv.ParseFloat(line[6], 64)
-		atom.force.x, _ = strconv.ParseFloat(line[7], 64)
-		atom.force.y, _ = strconv.ParseFloat(line[8], 64)
-		atom.force.z, _ = strconv.ParseFloat(line[9], 64)
-		atom.accelerated.x, _ = strconv.ParseFloat(line[10], 64)
-		atom.accelerated.y, _ = strconv.ParseFloat(line[11], 64)
-		atom.accelerated.z, _ = strconv.ParseFloat(line[12], 64)
-		atom.mass, _ = strconv.ParseFloat(line[13], 64)
-		atom.element = line[14]
-		atom.charge, _ = strconv.ParseFloat(line[15], 64)
+		atom := ReadOneAtom(line)
 
 		atoms = append(atoms, atom)
 	}
 	return atoms, nil
+}
+
+func ReadOneAtom(line []string) Atom {
+	var atom Atom
+	atom.index, _ = strconv.Atoi(line[0])
+	atom.position.x, _ = strconv.ParseFloat(line[1], 64)
+	atom.position.y, _ = strconv.ParseFloat(line[2], 64)
+	atom.position.z, _ = strconv.ParseFloat(line[3], 64)
+	atom.velocity.x, _ = strconv.ParseFloat(line[4], 64)
+	atom.velocity.y, _ = strconv.ParseFloat(line[5], 64)
+	atom.velocity.z, _ = strconv.ParseFloat(line[6], 64)
+	atom.force.x, _ = strconv.ParseFloat(line[7], 64)
+	atom.force.y, _ = strconv.ParseFloat(line[8], 64)
+	atom.force.z, _ = strconv.ParseFloat(line[9], 64)
+	atom.accelerated.x, _ = strconv.ParseFloat(line[10], 64)
+	atom.accelerated.y, _ = strconv.ParseFloat(line[11], 64)
+	atom.accelerated.z, _ = strconv.ParseFloat(line[12], 64)
+	atom.mass, _ = strconv.ParseFloat(line[13], 64)
+	atom.element = line[14]
+	atom.charge, _ = strconv.ParseFloat(line[15], 64)
+
+	return atom
+}
+
+func ReadOneResidue(lines []string) Residue {
+	var residue Residue
+	var atoms []*Atom
+	for i, _ := range lines {
+		line := strings.Split(lines[i], " ")
+		if i == 0 {
+			residue.Name = line[0]
+			residue.ID, _ = strconv.Atoi(line[1])
+			residue.ChainID = line[2]
+			continue
+		}
+
+		atom := ReadOneAtom(line)
+		atoms = append(atoms, &atom)
+
+	}
+	residue.Atoms = atoms
+	return residue
 }
 
 /*
