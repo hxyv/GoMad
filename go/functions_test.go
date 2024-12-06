@@ -199,6 +199,46 @@ func TestCopyResidue(t *testing.T) {
 	}
 }
 
+func TestCopyProtein(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CopyProtein" + "/input")
+	outputFiles := ReadDirectory("Tests/CopyProtein" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+
+		protein, _ := ReadOneProtein("Tests/CopyProtein/" + "input/" + inputFile.Name())
+
+		// function
+		result := CopyProtein(&protein)
+
+		// read output
+
+		realResult, _ := ReadOneProtein("Tests/CopyProtein/" + "output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("CopyProtein() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("CopyProtein() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("CopyProtein() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+}
+
 func TestCross(t *testing.T) {
 	inputFiles := ReadDirectory("Tests/Cross" + "/input")
 	outputFiles := ReadDirectory("Tests/Cross" + "/output")
@@ -1015,6 +1055,28 @@ func ReadResidues(filename string) ([]Residue, error) {
 	}
 
 	return residues, err
+}
+
+func ReadOneProtein(filename string) (Protein, error) {
+	var protein Protein
+	lines, err := readFileline(filename)
+	if err != nil {
+		return protein, err
+	}
+
+	firstLine := strings.Split(lines[0], " ")
+	protein.Name = firstLine[0]
+	residueLen, _ := strconv.Atoi(firstLine[1])
+	startIndex := 1
+	for j := 0; j < residueLen; j++ {
+		line := strings.Split(lines[startIndex], " ")
+		AtomLen, _ := strconv.Atoi(line[3])
+		residue := ReadOneResidue(lines[startIndex : startIndex+AtomLen+1])
+		protein.Residue = append(protein.Residue, &residue)
+		startIndex += AtomLen + 1
+	}
+
+	return protein, err
 }
 
 // /////
