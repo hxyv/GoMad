@@ -164,30 +164,80 @@ func TestCopyAtom(t *testing.T) {
 	}
 }
 
-/*
 func TestCopyResidue(t *testing.T) {
 	inputFiles := ReadDirectory("Tests/CopyResidue" + "/input")
 	outputFiles := ReadDirectory("Tests/CopyResidue" + "/output")
 
 	for i, inputFile := range inputFiles {
 		// read input
-		atomlist, _ := ReadAtoms("Tests/CopyResidue/" + "input/" + inputFile.Name())
-		atom := atomlist[0]
 
+		residueList, _ := ReadResidues("Tests/CopyResidue/" + "input/" + inputFile.Name())
+		residue := residueList[0]
 		// function
-		result := CopyAtom(&atom)
+		result := CopyResidue(&residue)
 
 		// read output
-		atomlist1, _ := ReadAtoms("Tests/CopyResidue/" + "output/" + outputFiles[i].Name())
-		realResult := atomlist1[0]
+		residueList1, _ := ReadResidues("Tests/CopyResidue/" + "output/" + outputFiles[i].Name())
+		realResult := residueList1[0]
 
-		if realResult != *result {
-			t.Errorf("CopyAtom() = %v, want %v", result, realResult)
+		// compare
+		if realResult.ChainID != result.ChainID || realResult.Name != result.Name || realResult.ID != result.ID {
+			t.Errorf("CopyResidue() = %v, want %v", result, realResult)
+		}
+
+		// compare atoms
+		if len(realResult.Atoms) == len(result.Atoms) {
+			for i := range realResult.Atoms {
+				if (*realResult.Atoms[i]) != (*result.Atoms[i]) {
+					t.Errorf("CopyResidue() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+				}
+			}
+		} else {
+			t.Errorf("Number mismatch")
 		}
 
 	}
 }
-*/
+
+func TestCopyProtein(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CopyProtein" + "/input")
+	outputFiles := ReadDirectory("Tests/CopyProtein" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+
+		protein, _ := ReadOneProtein("Tests/CopyProtein/" + "input/" + inputFile.Name())
+
+		// function
+		result := CopyProtein(&protein)
+
+		// read output
+
+		realResult, _ := ReadOneProtein("Tests/CopyProtein/" + "output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("CopyProtein() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("CopyProtein() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("CopyProtein() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+}
 
 func TestCross(t *testing.T) {
 	inputFiles := ReadDirectory("Tests/Cross" + "/input")
@@ -974,8 +1024,9 @@ func ReadOneResidue(lines []string) Residue {
 		line := strings.Split(lines[i], " ")
 		if i == 0 {
 			residue.Name = line[0]
-			residue.ID, _ = strconv.Atoi(line[1])
-			residue.ChainID = line[2]
+			residue.ChainID = line[1]
+			residue.ID, _ = strconv.Atoi(line[2])
+
 			continue
 		}
 
@@ -987,22 +1038,46 @@ func ReadOneResidue(lines []string) Residue {
 	return residue
 }
 
-/*
 func ReadResidues(filename string) ([]Residue, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := 0; i < len(lines)/2; i++{
-		var residue Residue
-		line1 := strings.Split(lines[2*i], " ")
-		residue.ChainID = line1[0]
-        residue.ID, _ = strconv.Atoi(line1[1])
+	var residues []Residue
+
+	for i := 0; i < len(lines); i++ {
+		line1 := strings.Split(lines[i], " ")
+		AtomLen, _ := strconv.Atoi(line1[3])
+		residue := ReadOneResidue(lines[i : i+AtomLen+1])
+		residues = append(residues, residue)
 
 	}
+
+	return residues, err
 }
-*/
+
+func ReadOneProtein(filename string) (Protein, error) {
+	var protein Protein
+	lines, err := readFileline(filename)
+	if err != nil {
+		return protein, err
+	}
+
+	firstLine := strings.Split(lines[0], " ")
+	protein.Name = firstLine[0]
+	residueLen, _ := strconv.Atoi(firstLine[1])
+	startIndex := 1
+	for j := 0; j < residueLen; j++ {
+		line := strings.Split(lines[startIndex], " ")
+		AtomLen, _ := strconv.Atoi(line[3])
+		residue := ReadOneResidue(lines[startIndex : startIndex+AtomLen+1])
+		protein.Residue = append(protein.Residue, &residue)
+		startIndex += AtomLen + 1
+	}
+
+	return protein, err
+}
 
 // /////
 // /////
