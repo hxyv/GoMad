@@ -42,7 +42,8 @@ ui <- fluidPage(
     position = "left"  # Sidebar on the left
   )
 )
-
+ 
+# creat the server
 server <- function(input, output) {
   observeEvent(input$runGoCode, {
     withProgress(message = "MD Simulation", value = 0, {
@@ -53,16 +54,10 @@ server <- function(input, output) {
       if (!is.null(input$proteinFile)) {
         file_path <- input$proteinFile$datapath
       } else if (input$fileURL != "") {
-        temp_file <- tempfile(fileext = ".pdb")
-        tryCatch({
-          download.file(input$fileURL, temp_file, mode = "wb")
-          file_path <- temp_file
-        }, error = function(e) {
-          showNotification("Invalid URL or download failed.", type = "error")
-          return()
-        })
+        tempFile <- tempfile(fileext = ".pdb")
+        download.file(input$fileURL, tempFile, mode = "wb")
+        file_path <- tempFile
       }
-      
       req(file_path)  
       
       time <- input$simTime
