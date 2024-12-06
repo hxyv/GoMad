@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -18,98 +20,61 @@ import (
 
 // readProteinFromFile take a fileName as example
 // return the Protein structure using the informtion of file
-func readProteinFromFile(fileName string) (Protein, error) {
-	file, err := os.Open(fileName)
+func readProteinFromFile(filepath string) (Protein, error) {
+	file, err := os.Open(filepath)
 	if err != nil {
 		return Protein{}, err
 	}
 	defer file.Close()
 
-	var residues []*Residue
-	var currentResidue *Residue
 	var protein Protein
+	var currentResidue *Residue
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		// Process lines that start with "ATOM"
 		if strings.HasPrefix(line, "ATOM") {
-			atom, residueName, ChainID, err := parsePDBLine(line)
-			if err != nil {
-				return Protein{}, err
+			parts := strings.Fields(line)
+			if len(parts) < 11 {
+				continue
 			}
 
-			// If it's a new residue or first row, start a new Residue object
-			if currentResidue == nil || currentResidue.Name != residueName {
-				// Add the previous residue to the list if it exists
-				if currentResidue != nil {
-					residues = append(residues, currentResidue)
-				}
+			atomIndex, _ := strconv.Atoi(parts[1])
+			element := parts[2]
+			residueName := parts[3]
+			chainID := parts[4]
+			residueID, _ := strconv.Atoi(parts[5])
+			x, _ := strconv.ParseFloat(parts[6], 64)
+			y, _ := strconv.ParseFloat(parts[7], 64)
+			z, _ := strconv.ParseFloat(parts[8], 64)
 
-				// otherwise,Create a new Residue object
+			if currentResidue == nil || currentResidue.ID != residueID {
 				currentResidue = &Residue{
 					Name:    residueName,
-					ChainID: ChainID,
-					Atoms:   []*Atom{&atom},
+					ID:      residueID,
+					ChainID: chainID,
+					Atoms:   []*Atom{},
 				}
-			} else {
-				// If it's the same residue, add the atom to the current residue
-				currentResidue.Atoms = append(currentResidue.Atoms, &atom)
+				protein.Residue = append(protein.Residue, currentResidue)
 			}
-		}
-	}
 
-	// Add the last residue to the list
-	if currentResidue != nil {
-		residues = append(residues, currentResidue)
+			atom := &Atom{
+				index:    atomIndex,
+				position: TriTuple{x: x, y: y, z: z},
+				element:  element,
+			}
+			currentResidue.Atoms = append(currentResidue.Atoms, atom)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return Protein{}, err
 	}
 
-	// Set the residues in the protein
-	protein.Residue = residues
 	// upload weight of each atoms
 	protein.UpdateMasses(massTable)
 
 	return protein, nil
-}
-
-// Function to parse a PDB line based on spaces
-func parsePDBLine(line string) (Atom, string, string, error) {
-	fields := strings.Fields(line)
-	var atom Atom
-
-	// Parse coordinates
-	x, err := strconv.ParseFloat(fields[6], 64)
-	if err != nil {
-		return Atom{}, "", "", fmt.Errorf("error parsing x position: %v", err)
-	}
-	y, err := strconv.ParseFloat(fields[7], 64)
-	if err != nil {
-		return Atom{}, "", "", fmt.Errorf("error parsing y position: %v", err)
-	}
-	z, err := strconv.ParseFloat(fields[8], 64)
-	if err != nil {
-		return Atom{}, "", "", fmt.Errorf("error parsing z position: %v", err)
-	}
-
-	// Parse element symbol
-	element := fields[2]
-	ChainID := fields[4]
-	index, _ := strconv.Atoi(fields[1])
-	// pass value to atom object
-	atom.position.x = x
-	atom.position.y = y
-	atom.position.z = z
-	atom.element = element
-	atom.index = index
-	// Extract residue name
-	residueName := fields[3]
-
-	return atom, residueName, ChainID, nil
 }
 
 func (p *Protein) UpdateMasses(massTable map[string]float64) {
@@ -343,14 +308,14 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 // ////These function are used for read parameter for charge
 // ///////////////
 // ****highest level function****
-func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, error) {
+func parseChargeFile(filename string) (map[string]map[string]float64, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	chargeData := make(map[string]map[string]AtomChargeData)
+	chargeData := make(map[string]map[string]float64)
 	scanner := bufio.NewScanner(file)
 	var currentResidue string
 
@@ -365,22 +330,20 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 		// Check for residue header lines like "[ ALA ]"
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
 			currentResidue = strings.TrimSpace(line[1 : len(line)-1])
-			chargeData[currentResidue] = make(map[string]AtomChargeData)
+			chargeData[currentResidue] = make(map[string]float64)
 			continue
 		}
 
 		// Parse atom data lines
 		fields := strings.Fields(line)
 
-		// Ensure that we have exactly four columns
-		if len(fields) != 4 {
+		// Ensure that we have at least three columns
+		if len(fields) < 3 {
 			return nil, fmt.Errorf("invalid line format: %s", line)
 		}
 
 		atomName := fields[0]
-		atomType := fields[1]
 		atomChargeStr := fields[2]
-		chargeGroupStr := fields[3]
 
 		// Parse atom charge
 		atomCharge, err := strconv.ParseFloat(atomChargeStr, 64)
@@ -388,21 +351,11 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 			return nil, fmt.Errorf("invalid atom charge '%s' in line: %s", atomChargeStr, line)
 		}
 
-		// Parse charge group (can be integer)
-		chargeGroup, err := strconv.Atoi(chargeGroupStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid charge group '%s' in line: %s", chargeGroupStr, line)
-		}
-
 		// Store the charge data
 		if currentResidue == "" {
 			return nil, fmt.Errorf("atom data without residue header: %s", line)
 		}
-		chargeData[currentResidue][atomName] = AtomChargeData{
-			AtomType:    atomType,
-			AtomCharge:  atomCharge,
-			ChargeGroup: chargeGroup,
-		}
+		chargeData[currentResidue][atomName] = atomCharge
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -412,16 +365,16 @@ func parseChargeFile(filename string) (map[string]map[string]AtomChargeData, err
 	return chargeData, nil
 }
 
-func TemporaryPlot(RMSD []float64) {
+func TemporaryPlot(RMSD []float64, time float64) {
 	p := plot.New()
 
-	p.Title.Text = "Plot Example"
-	p.X.Label.Text = "X"
-	p.Y.Label.Text = "Y"
+	p.Title.Text = "Trajectory analysis"
+	p.X.Label.Text = "Time(fs)"
+	p.Y.Label.Text = "RMSD"
 
 	points := make(plotter.XYs, len(RMSD))
 	for i := range points {
-		points[i].X = float64(i)
+		points[i].X = float64(i) * time
 		points[i].Y = RMSD[i]
 	}
 
@@ -432,7 +385,7 @@ func TemporaryPlot(RMSD []float64) {
 
 	p.Add(s)
 
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "scatter.png"); err != nil {
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "visualization/scatter.png"); err != nil {
 		panic(err)
 	}
 
@@ -481,4 +434,26 @@ func WriteProteinToPDB(protein *Protein, filename string) error {
 	}
 
 	return writer.Flush()
+}
+
+// writeRMSD writes a slice of float64 values to a CSV file.
+func writeRMSD(slice []float64) error {
+	// Open the file for writing
+	outFile, err := os.Create("result/RMSD.csv")
+	if err != nil {
+		log.Fatalf("Failed to create output file: %v", err)
+	}
+	defer outFile.Close()
+
+	writer := csv.NewWriter(outFile)
+	defer writer.Flush()
+
+	for i, value := range slice {
+		err := writer.Write([]string{strconv.Itoa(i), strconv.FormatFloat(value, 'f', 2, 64)})
+		if err != nil {
+			log.Fatalf("Failed to write to output file: %v", err)
+		}
+	}
+
+	return nil
 }

@@ -10,23 +10,23 @@ func CalculateBondStretchEnergy(k, r, r_0 float64) float64 {
 }
 
 func CalculateAnglePotentialEnergy(k, theta, theta_0 float64) float64 {
-	return 0.5 * k * (theta - theta_0) / 360 * math.Pi * (theta - theta_0) / 360 * math.Pi
+	return 0.5 * k * (theta - theta_0) / 180 * math.Pi * (theta - theta_0) / 180 * math.Pi
 }
 
 func CalculateProperDihedralAngleEnergy(kd, phi, pn, phase float64) float64 {
-	return 0.5 * kd * (1 + math.Cos(pn*phi-phase))
+	return 0.5 * kd * (1 + math.Cos(pn*phi-phase/180*math.Pi))
 }
 
 func CalculateAngle(atom1, atom2, atom3 *Atom) float64 {
-	vector1 := CalculateVector(atom2, atom1)
-	vector2 := CalculateVector(atom3, atom1)
+	vector1 := CalculateVector(atom1, atom2)
+	vector2 := CalculateVector(atom3, atom2)
 
 	upperValue := vector1.dot(vector2)
 	lowerValue := Distance(atom1.position, atom2.position) * Distance(atom2.position, atom3.position)
 
 	value := upperValue / lowerValue
 
-	return math.Acos(value) / math.Pi * 360
+	return math.Abs(math.Acos(value) / math.Pi * 180)
 }
 
 func Distance(p1, p2 TriTuple) float64 {
@@ -44,13 +44,12 @@ func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
 
 	plane1 := BuildNormalVector(vector1, vector2)
 	plane2 := BuildNormalVector(vector2, vector3)
-	plane3 := BuildNormalVector(plane1, plane2)
 
 	x := plane1.dot(plane2)
-	y := plane3.dot(vector2) / magnitude(vector2)
-	angle := math.Atan2(y, x)
+	y := magnitude(plane1) * magnitude(plane2)
+	angle := math.Acos(x / y)
 
-	return angle * (180 / math.Pi)
+	return math.Abs(angle * (180 / math.Pi))
 }
 
 func BuildNormalVector(vector1, vector2 TriTuple) TriTuple {
@@ -70,44 +69,77 @@ func magnitude(vector TriTuple) float64 {
 	return math.Sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z)
 }
 
-func CalculateTotoalBondStretchEnergy(k, r, r_0 float64) float64 {
-	return 0.5 * k * (r - r_0) * (r - r_0)
+func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
+	// Calculate total energy and forces of bonded interactions
+	bondedEnergy, bondedForceMap := CalculateTotalEnergyForce(p, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+
+	// Calculate total energy and forces of unbonded interactions
+	unbondedEnergy, unbondedForceMap := CalculateTotalUnbondedEnergyForce(p, nonbondParameter)
+	fmt.Println("bondedEnergy is:", bondedEnergy)
+	fmt.Println("unbondedEnergy is:", unbondedEnergy)
+	// Combine energies
+	totalEnergy := bondedEnergy + unbondedEnergy
+	// Create a total force map
+	totalForceMap := make(map[int]*TriTuple)
+	for index, force := range bondedForceMap {
+
+		totalForceMap[index] = &TriTuple{
+			x: force.x,
+			y: force.y,
+			z: force.z,
+		}
+	}
+
+	for index, force := range unbondedForceMap {
+		if _, exists := totalForceMap[index]; exists {
+			totalForceMap[index].x += force.x
+			totalForceMap[index].y += force.y
+			totalForceMap[index].z += force.z
+		} else {
+			totalForceMap[index] = &TriTuple{
+				x: force.x,
+				y: force.y,
+				z: force.z,
+			}
+		}
+	}
+
+	return totalEnergy, totalForceMap
 }
 
-func PerformEnergyMinimization(currentProtein *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-
-	iteration := 1000
+func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
+	iteration := 50
 	// set maximum displacement
 	h := 0.01
 
 	for i := 0; i < iteration; i++ {
-		// calculate total Energy of original protein
-		initialEnergy, forceMap := CalculateTotalEnergyForce(currentProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		// Combine energies and forces
+		totalEnergy, totalForceMap := CombineEnergyAndForce(currentProtein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		fmt.Printf("Iteration %d: Total Energy = %f\n", i, totalEnergy)
 
 		tempProtein := CopyProtein(currentProtein)
 
-		// perform SteepestDescent, update positions in protein
-		SteepestDescent(tempProtein, h, forceMap)
+		// Perform SteepestDescent, update positions in protein
+		SteepestDescent(tempProtein, h, totalForceMap)
 
-		// calculate total Energy of updated protein
-		updatedEnergy, _ := CalculateTotalEnergyForce(tempProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		// Calculate total energy of updated protein
+		newTotalEnergy, _ := CombineEnergyAndForce(tempProtein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		fmt.Printf("Iteration %d: New Total Energy = %f\n", i, newTotalEnergy)
 
-		// if Total energy decrease, accept the changes of positions and increase maximum displacement h
+		// If total energy decreases, accept the changes of positions and increase maximum displacement h
 		// Otherwise, reject the changes in positions and decrease maximum displacement h
-		if updatedEnergy < initialEnergy {
+		if newTotalEnergy < totalEnergy {
 			currentProtein = tempProtein
 			h *= 1.2
 		} else {
 			h *= 0.2 * h
 		}
-
 	}
 
 	return currentProtein
-
 }
 
-func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
+func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	forceMap := make(map[int]*TriTuple)
 
 	// range over each residue in protein
@@ -115,17 +147,19 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 	bondEnergy := 0.0
 	angleEnergy := 0.0
 	dihedralEnergy := 0.0
-	for _, residue := range p.Residue {
+
+	index := 0
+	for w, residue := range p.Residue {
 
 		// Calculate bondstretch energy
 		// range over each bond
 
-		for _, bondPairs := range residueParameterValue[residue.Name].bonds {
+		for _, bondPairs := range residueParameterBondValue[residue.Name].bonds {
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
-				if atom1.element[0] == (*bondPairs).atoms[0][0] {
+				if atom1.element == (*bondPairs).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms); j++ {
-						if residue.Atoms[j].element[0] == (*bondPairs).atoms[1][0] {
+						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
 							r := Distance(atom1.position, atom2.position)
@@ -139,53 +173,177 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 							if len(parameterList) != 1 {
 
-								force := CalculateBondForce(parameterList[1], r*0.1, parameterList[0], atom1, atom2)
-								if force.x > 200 || force.x < -200 {
+								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
+								if math.IsNaN(force.x) {
 									continue
 								}
-								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r*0.1, parameterList[0])
+								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
 
-								_, exist := forceMap[i]
+								_, exist := forceMap[i+index]
 								if exist {
-									forceMap[i].x += force.x
-									forceMap[i].y += force.y
-									forceMap[i].z += force.z
+									forceMap[i+index].x += force.x
+									forceMap[i+index].y += force.y
+									forceMap[i+index].z += force.z
 								} else {
-									forceMap[i] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-									forceMap[i].x = force.x
-									forceMap[i].y = force.y
-									forceMap[i].z = force.z
+									forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+									forceMap[i+index].x = force.x
+									forceMap[i+index].y = force.y
+									forceMap[i+index].z = force.z
 								}
 
-								_, exist1 := forceMap[j]
+								_, exist1 := forceMap[j+index]
 								if exist1 {
-									forceMap[j].x += -force.x
-									forceMap[j].y += -force.y
-									forceMap[j].z += -force.z
+									forceMap[j+index].x += -force.x
+									forceMap[j+index].y += -force.y
+									forceMap[j+index].z += -force.z
 								} else {
-									forceMap[j] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-									forceMap[j].x = -force.x
-									forceMap[j].y = -force.y
-									forceMap[j].z = -force.z
+									forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+									forceMap[j+index].x = -force.x
+									forceMap[j+index].y = -force.y
+									forceMap[j+index].z = -force.z
 								}
 
 							}
 
 						}
 					}
+
+					if (*bondPairs).atoms[1] == "N" && w != len(p.Residue)-1 {
+						for k := range p.Residue[w+1].Atoms {
+							if p.Residue[w+1].Atoms[k].element == "N" {
+
+								atom2 := p.Residue[w+1].Atoms[k]
+								r := Distance(atom1.position, atom2.position)
+								if r == 0 {
+									continue
+								}
+								if r > 2 {
+									continue
+								}
+
+								parameterList := []float64{0.13830, 354803.2}
+								if len(parameterList) != 1 {
+
+									force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
+									if math.IsNaN(force.x) {
+										continue
+									}
+									bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
+
+									_, exist := forceMap[i+index]
+									if exist {
+										forceMap[i+index].x += force.x
+										forceMap[i+index].y += force.y
+										forceMap[i+index].z += force.z
+									} else {
+										forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[i+index].x = force.x
+										forceMap[i+index].y = force.y
+										forceMap[i+index].z = force.z
+									}
+
+									_, exist1 := forceMap[k+index+len(residue.Atoms)]
+									if exist1 {
+										forceMap[k+index+len(residue.Atoms)].x += -force.x
+										forceMap[k+index+len(residue.Atoms)].y += -force.y
+										forceMap[k+index+len(residue.Atoms)].z += -force.z
+									} else {
+										forceMap[k+index+len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[k+index+len(residue.Atoms)].x = -force.x
+										forceMap[k+index+len(residue.Atoms)].y = -force.y
+										forceMap[k+index+len(residue.Atoms)].z = -force.z
+									}
+
+								}
+
+							}
+						}
+					}
 				}
 			}
+
 		}
 
-		for _, angleTris := range residueParameterValue[residue.Name].angles {
+		for _, angleTris := range residueParameterOtherValue[residue.Name].angles {
+			if (*angleTris).atoms[0][0] == '-' {
+				if w != 0 {
+					for a := range p.Residue[w-1].Atoms {
+						if p.Residue[w-1].Atoms[a].element == "C" {
+							atom1 := p.Residue[w-1].Atoms[a]
+							for i := 0; i < len(residue.Atoms)-1; i++ {
+								if residue.Atoms[i].element == (*angleTris).atoms[1] {
+									atom2 := residue.Atoms[i]
+									for j := i + 1; j < len(residue.Atoms); j++ {
+										if residue.Atoms[j].element == (*angleTris).atoms[2] {
+											atom3 := residue.Atoms[j]
+											theta := CalculateAngle(atom1, atom2, atom3)
+
+											if math.IsNaN(theta) {
+												continue
+											}
+											parameterList := []float64{119.200, 418.400}
+											if len(parameterList) != 1 {
+
+												force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
+
+												angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+												if math.IsNaN(angleEnergy) {
+													continue
+												}
+												_, exist := forceMap[a+index-len(p.Residue[w-1].Atoms)]
+												if exist {
+													forceMap[a+index-len(p.Residue[w-1].Atoms)].x += force_i.x
+													forceMap[a+index-len(p.Residue[w-1].Atoms)].y += force_i.y
+													forceMap[a+index-len(p.Residue[w-1].Atoms)].z += force_i.z
+												} else {
+													forceMap[a+index-len(p.Residue[w-1].Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[a+index-len(p.Residue[w-1].Atoms)].x = force_i.x
+													forceMap[a+index-len(p.Residue[w-1].Atoms)].y = force_i.y
+													forceMap[a+index-len(p.Residue[w-1].Atoms)].z = force_i.z
+												}
+												_, exist1 := forceMap[i+index]
+												if exist1 {
+													forceMap[i+index].x += force_j.x
+													forceMap[i+index].y += force_j.y
+													forceMap[i+index].z += force_j.z
+												} else {
+													forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[i+index].x = force_j.x
+													forceMap[i+index].y = force_j.y
+													forceMap[i+index].z = force_j.z
+												}
+
+												_, exist2 := forceMap[j+index]
+												if exist2 {
+													forceMap[j+index].x += force_k.x
+													forceMap[j+index].y += force_k.y
+													forceMap[j+index].z += force_k.z
+												} else {
+													forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[j+index].x = force_k.x
+													forceMap[j+index].y = force_k.y
+													forceMap[j+index].z = force_k.z
+												}
+
+											}
+
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
 			for i := 0; i < len(residue.Atoms)-2; i++ {
 				atom1 := residue.Atoms[i]
-				if atom1.element[0] == (*angleTris).atoms[0][0] {
+				if atom1.element == (*angleTris).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms)-1; j++ {
-						if residue.Atoms[j].element[0] == (*angleTris).atoms[1][0] {
+						if residue.Atoms[j].element == (*angleTris).atoms[1] {
 							atom2 := residue.Atoms[j]
 							for k := j + 1; k < len(residue.Atoms); k++ {
-								if residue.Atoms[k].element[0] == (*angleTris).atoms[2][0] {
+								if residue.Atoms[k].element == (*angleTris).atoms[2] {
 									atom3 := residue.Atoms[k]
 									theta := CalculateAngle(atom1, atom2, atom3)
 
@@ -197,69 +355,279 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 										force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
 
-										if force_i.x > 200 || force_i.x < -200 {
+										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+										if math.IsNaN(angleEnergy) {
 											continue
 										}
-										angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
-										_, exist := forceMap[i]
+										_, exist := forceMap[i+index]
 										if exist {
-											forceMap[i].x += force_i.x
-											forceMap[i].y += force_i.y
-											forceMap[i].z += force_i.z
+											forceMap[i+index].x += force_i.x
+											forceMap[i+index].y += force_i.y
+											forceMap[i+index].z += force_i.z
 										} else {
-											forceMap[i] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[i].x = force_i.x
-											forceMap[i].y = force_i.y
-											forceMap[i].z = force_i.z
+											forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[i+index].x = force_i.x
+											forceMap[i+index].y = force_i.y
+											forceMap[i+index].z = force_i.z
 										}
 
-										_, exist1 := forceMap[j]
+										_, exist1 := forceMap[j+index]
 										if exist1 {
-											forceMap[j].x += force_j.x
-											forceMap[j].y += force_j.y
-											forceMap[j].z += force_j.z
+											forceMap[j+index].x += force_j.x
+											forceMap[j+index].y += force_j.y
+											forceMap[j+index].z += force_j.z
 										} else {
-											forceMap[j] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[j].x = force_j.x
-											forceMap[j].y = force_j.y
-											forceMap[j].z = force_j.z
+											forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[j+index].x = force_j.x
+											forceMap[j+index].y = force_j.y
+											forceMap[j+index].z = force_j.z
 										}
 
-										_, exist2 := forceMap[k]
+										_, exist2 := forceMap[k+index]
 										if exist2 {
-											forceMap[k].x += force_k.x
-											forceMap[k].y += force_k.y
-											forceMap[k].z += force_k.z
+											forceMap[k+index].x += force_k.x
+											forceMap[k+index].y += force_k.y
+											forceMap[k+index].z += force_k.z
 										} else {
-											forceMap[k] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[k].x = force_k.x
-											forceMap[k].y = force_k.y
-											forceMap[k].z = force_k.z
+											forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[k+index].x = force_k.x
+											forceMap[k+index].y = force_k.y
+											forceMap[k+index].z = force_k.z
 										}
 
 									}
 
 								}
 							}
+							if (*angleTris).atoms[2][0] == '+' && w != len(p.Residue)-1 {
+								for k := range p.Residue[w+1].Atoms {
+									if p.Residue[w+1].Atoms[k].element == "N" {
+										atom3 := p.Residue[w+1].Atoms[k]
+										theta := CalculateAngle(atom1, atom2, atom3)
+
+										if math.IsNaN(theta) {
+											continue
+										}
+										parameterList := []float64{120.900, 669.440}
+										if len(parameterList) != 1 {
+
+											force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
+
+											angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
+											if math.IsNaN(angleEnergy) {
+												continue
+											}
+											_, exist := forceMap[i+index]
+											if exist {
+												forceMap[i+index].x += force_i.x
+												forceMap[i+index].y += force_i.y
+												forceMap[i+index].z += force_i.z
+											} else {
+												forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[i+index].x = force_i.x
+												forceMap[i+index].y = force_i.y
+												forceMap[i+index].z = force_i.z
+											}
+
+											_, exist1 := forceMap[j+index]
+											if exist1 {
+												forceMap[j+index].x += force_j.x
+												forceMap[j+index].y += force_j.y
+												forceMap[j+index].z += force_j.z
+											} else {
+												forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[j+index].x = force_j.x
+												forceMap[j+index].y = force_j.y
+												forceMap[j+index].z = force_j.z
+											}
+
+											_, exist2 := forceMap[k+index+len(residue.Atoms)]
+											if exist2 {
+												forceMap[k+index+len(residue.Atoms)].x += force_k.x
+												forceMap[k+index+len(residue.Atoms)].y += force_k.y
+												forceMap[k+index+len(residue.Atoms)].z += force_k.z
+											} else {
+												forceMap[k+index+len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[k+index+len(residue.Atoms)].x = force_k.x
+												forceMap[k+index+len(residue.Atoms)].y = force_k.y
+												forceMap[k+index+len(residue.Atoms)].z = force_k.z
+											}
+
+										}
+									}
+								}
+
+							}
+						}
+					}
+
+				}
+			}
+		}
+
+		for _, dihedralValues := range residueParameterOtherValue[residue.Name].dihedrals {
+			if (*dihedralValues).atoms[0] == "-CA" && w != 0 {
+				for i := range p.Residue[w-1].Atoms {
+					if p.Residue[w-1].Atoms[i].element == "CA" {
+						atom1 := p.Residue[w-1].Atoms[i]
+						atom2 := p.Residue[w-1].Atoms[i+1]
+
+						for j := range p.Residue[w].Atoms {
+							if p.Residue[w].Atoms[j].element == (*dihedralValues).atoms[2] {
+								atom3 := p.Residue[w].Atoms[j]
+								atom4 := p.Residue[w].Atoms[j+1]
+								phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
+								if math.IsNaN(phi) {
+									continue
+								}
+								parameterList := []float64{180.0, 6.06680, 2}
+								if len(parameterList) != 1 {
+
+									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
+
+									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+									if math.IsNaN(dihedralEnergy) {
+										continue
+									}
+									_, exist := forceMap[i+index-len(residue.Atoms)]
+									if exist {
+										forceMap[i+index-len(residue.Atoms)].x += force_i.x
+										forceMap[i+index-len(residue.Atoms)].y += force_i.y
+										forceMap[i+index-len(residue.Atoms)].z += force_i.z
+									} else {
+										forceMap[i+index-len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[i+index-len(residue.Atoms)].x = force_i.x
+										forceMap[i+index-len(residue.Atoms)].y = force_i.y
+										forceMap[i+index-len(residue.Atoms)].z = force_i.z
+									}
+
+									_, exist1 := forceMap[i+index-len(residue.Atoms)+1]
+									if exist1 {
+										forceMap[i+index-len(residue.Atoms)+1].x += force_j.x
+										forceMap[i+index-len(residue.Atoms)+1].y += force_j.y
+										forceMap[i+index-len(residue.Atoms)+1].z += force_j.z
+									} else {
+										forceMap[i+index-len(residue.Atoms)+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[i+index-len(residue.Atoms)+1].x = force_j.x
+										forceMap[i+index-len(residue.Atoms)+1].y = force_j.y
+										forceMap[i+index-len(residue.Atoms)+1].z = force_j.z
+									}
+
+									_, exist2 := forceMap[j+index]
+									if exist2 {
+										forceMap[j+index].x += force_k.x
+										forceMap[j+index].y += force_k.y
+										forceMap[j+index].z += force_k.z
+									} else {
+										forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[j+index].x = force_k.x
+										forceMap[j+index].y = force_k.y
+										forceMap[j+index].z = force_k.z
+									}
+
+									_, exist3 := forceMap[j+index+1]
+									if exist3 {
+										forceMap[j+index+1].x += force_l.x
+										forceMap[j+index+1].y += force_l.y
+										forceMap[j+index+1].z += force_l.z
+									} else {
+										forceMap[j+index+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[j+index+1].x = force_l.x
+										forceMap[j+index+1].y = force_l.y
+										forceMap[j+index+1].z = force_l.z
+									}
+
+								}
+
+							}
+						}
+					}
+				}
+			}
+
+			if (*dihedralValues).atoms[0] == "-C" && w != 0 {
+				for i := range p.Residue[w-1].Atoms {
+					if p.Residue[w-1].Atoms[i].element == "C" {
+						atom1 := p.Residue[w-1].Atoms[i]
+						atom2 := residue.Atoms[0]
+						atom3 := residue.Atoms[1]
+						atom4 := residue.Atoms[2]
+						phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
+						if math.IsNaN(phi) {
+							continue
+						}
+						parameterList := SearchParameter(4, dihedralParameter, atom1, atom2, atom3, atom4)
+						if len(parameterList) != 1 {
+
+							force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
+
+							dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+							if math.IsNaN(dihedralEnergy) {
+								continue
+							}
+							_, exist := forceMap[i+index-len(residue.Atoms)]
+							if exist {
+								forceMap[i+index-len(residue.Atoms)].x += force_i.x
+								forceMap[i+index-len(residue.Atoms)].y += force_i.y
+								forceMap[i+index-len(residue.Atoms)].z += force_i.z
+							} else {
+								forceMap[i+index-len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[i+index-len(residue.Atoms)].x = force_i.x
+								forceMap[i+index-len(residue.Atoms)].y = force_i.y
+								forceMap[i+index-len(residue.Atoms)].z = force_i.z
+							}
+
+							_, exist1 := forceMap[index]
+							if exist1 {
+								forceMap[index].x += force_j.x
+								forceMap[index].y += force_j.y
+								forceMap[index].z += force_j.z
+							} else {
+								forceMap[index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index].x = force_j.x
+								forceMap[index].y = force_j.y
+								forceMap[index].z = force_j.z
+							}
+
+							_, exist2 := forceMap[index+1]
+							if exist2 {
+								forceMap[index+1].x += force_k.x
+								forceMap[index+1].y += force_k.y
+								forceMap[index+1].z += force_k.z
+							} else {
+								forceMap[index+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index+1].x = force_k.x
+								forceMap[index+1].y = force_k.y
+								forceMap[index+1].z = force_k.z
+							}
+
+							_, exist3 := forceMap[index+2]
+							if exist3 {
+								forceMap[index+2].x += force_l.x
+								forceMap[index+2].y += force_l.y
+								forceMap[index+2].z += force_l.z
+							} else {
+								forceMap[index+2] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[index+2].x = force_l.x
+								forceMap[index+2].y = force_l.y
+								forceMap[index+2].z = force_l.z
+							}
 
 						}
 					}
 				}
 			}
-		}
-
-		for _, dihedralValues := range residueParameterValue[residue.Name].dihedrals {
 			for i := 0; i < len(residue.Atoms)-3; i++ {
 				atom1 := residue.Atoms[i]
-				if atom1.element[0] == (*dihedralValues).atoms[0][0] {
+				if atom1.element == (*dihedralValues).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms)-2; j++ {
-						if residue.Atoms[j].element[0] == (*dihedralValues).atoms[1][0] {
+						if residue.Atoms[j].element == (*dihedralValues).atoms[1] {
 							atom2 := residue.Atoms[j]
 							for k := j + 1; k < len(residue.Atoms)-1; k++ {
-								if residue.Atoms[k].element[0] == (*dihedralValues).atoms[2][0] {
+								if residue.Atoms[k].element == (*dihedralValues).atoms[2] {
 									atom3 := residue.Atoms[k]
 									for l := k + 1; l < len(residue.Atoms); l++ {
-										if residue.Atoms[l].element[0] == (*dihedralValues).atoms[3][0] {
+										if residue.Atoms[l].element == (*dihedralValues).atoms[3] {
 											atom4 := residue.Atoms[l]
 											phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
 											if math.IsNaN(phi) {
@@ -270,366 +638,137 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterValue map[string]resi
 
 												force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
-												if force_i.x > 200 || force_i.x < -200 {
+												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+												if math.IsNaN(dihedralEnergy) {
 													continue
 												}
-												dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
-												_, exist := forceMap[i]
+												_, exist := forceMap[i+index]
 												if exist {
-													forceMap[i].x += force_i.x
-													forceMap[i].y += force_i.y
-													forceMap[i].z += force_i.z
+													forceMap[i+index].x += force_i.x
+													forceMap[i+index].y += force_i.y
+													forceMap[i+index].z += force_i.z
 												} else {
-													forceMap[i] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[i].x = force_i.x
-													forceMap[i].y = force_i.y
-													forceMap[i].z = force_i.z
+													forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[i+index].x = force_i.x
+													forceMap[i+index].y = force_i.y
+													forceMap[i+index].z = force_i.z
 												}
 
-												_, exist1 := forceMap[j]
+												_, exist1 := forceMap[j+index]
 												if exist1 {
-													forceMap[j].x += force_j.x
-													forceMap[j].y += force_j.y
-													forceMap[j].z += force_j.z
+													forceMap[j+index].x += force_j.x
+													forceMap[j+index].y += force_j.y
+													forceMap[j+index].z += force_j.z
 												} else {
-													forceMap[j] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[j].x = force_j.x
-													forceMap[j].y = force_j.y
-													forceMap[j].z = force_j.z
+													forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[j+index].x = force_j.x
+													forceMap[j+index].y = force_j.y
+													forceMap[j+index].z = force_j.z
 												}
 
-												_, exist2 := forceMap[k]
+												_, exist2 := forceMap[k+index]
 												if exist2 {
-													forceMap[k].x += force_k.x
-													forceMap[k].y += force_k.y
-													forceMap[k].z += force_k.z
+													forceMap[k+index].x += force_k.x
+													forceMap[k+index].y += force_k.y
+													forceMap[k+index].z += force_k.z
 												} else {
-													forceMap[k] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[k].x = force_k.x
-													forceMap[k].y = force_k.y
-													forceMap[k].z = force_k.z
+													forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[k+index].x = force_k.x
+													forceMap[k+index].y = force_k.y
+													forceMap[k+index].z = force_k.z
 												}
 
-												_, exist3 := forceMap[l]
+												_, exist3 := forceMap[l+index]
 												if exist3 {
-													forceMap[l].x += force_l.x
-													forceMap[l].y += force_l.y
-													forceMap[l].z += force_l.z
+													forceMap[l+index].x += force_l.x
+													forceMap[l+index].y += force_l.y
+													forceMap[l+index].z += force_l.z
 												} else {
-													forceMap[l] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[l].x = force_l.x
-													forceMap[l].y = force_l.y
-													forceMap[l].z = force_l.z
+													forceMap[l+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[l+index].x = force_l.x
+													forceMap[l+index].y = force_l.y
+													forceMap[l+index].z = force_l.z
 												}
 
 											}
 										}
 									}
-								}
 
-							}
+									if (*dihedralValues).atoms[3] == "+N" && w != len(p.Residue)-1 {
+										atom4 := p.Residue[w+1].Atoms[0]
+										phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
+										if math.IsNaN(phi) {
+											continue
+										}
+										parameterList := []float64{180.0, 15.167, 2}
+										if len(parameterList) != 1 {
+											force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
 
-						}
-					}
-				}
-			}
-		}
+											dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
+											if math.IsNaN(dihedralEnergy) {
+												continue
+											}
+											_, exist := forceMap[i+index]
+											if exist {
+												forceMap[i+index].x += force_i.x
+												forceMap[i+index].y += force_i.y
+												forceMap[i+index].z += force_i.z
+											} else {
+												forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[i+index].x = force_i.x
+												forceMap[i+index].y = force_i.y
+												forceMap[i+index].z = force_i.z
+											}
 
-	}
+											_, exist1 := forceMap[j+index]
+											if exist1 {
+												forceMap[j+index].x += force_j.x
+												forceMap[j+index].y += force_j.y
+												forceMap[j+index].z += force_j.z
+											} else {
+												forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[j+index].x = force_j.x
+												forceMap[j+index].y = force_j.y
+												forceMap[j+index].z = force_j.z
+											}
 
-	// additional addtion in interactions between two AA
-	// additional connecting bonds
-	index1 := 0
-	for m, aminoA := range p.Residue {
-		if m == len(p.Residue)-1 {
-			break
-		}
+											_, exist2 := forceMap[k+index]
+											if exist2 {
+												forceMap[k+index].x += force_k.x
+												forceMap[k+index].y += force_k.y
+												forceMap[k+index].z += force_k.z
+											} else {
+												forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[k+index].x = force_k.x
+												forceMap[k+index].y = force_k.y
+												forceMap[k+index].z = force_k.z
+											}
 
-		for n := range aminoA.Atoms {
-			if aminoA.Atoms[n].element == "CB" {
-				atom1 := aminoA.Atoms[n]
-				for t := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[t].element == "N*" {
-						atom2 := p.Residue[m+1].Atoms[t]
-						r := Distance(atom1.position, atom2.position)
-						if r == 0 {
-							continue
-						}
-						if r > 2 {
-							continue
-						}
-						parameterList := SearchParameter(2, bondParameter, atom1, atom2)
-						if len(parameterList) != 1 {
-							force := CalculateBondForce(parameterList[1], r*0.1, parameterList[0], atom1, atom2)
-							if force.x > 200 || force.x < -200 {
-								continue
-							}
-							bondEnergy += CalculateBondStretchEnergy(parameterList[1], r*0.1, parameterList[0])
+											_, exist3 := forceMap[len(residue.Atoms)+index]
+											if exist3 {
+												forceMap[index+len(residue.Atoms)].x += force_l.x
+												forceMap[len(residue.Atoms)+index].y += force_l.y
+												forceMap[len(residue.Atoms)+index].z += force_l.z
+											} else {
+												forceMap[len(residue.Atoms)+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[len(residue.Atoms)+index].x = force_l.x
+												forceMap[len(residue.Atoms)+index].y = force_l.y
+												forceMap[len(residue.Atoms)+index].z = force_l.z
+											}
 
-							_, exist := forceMap[index1+n]
-							if exist {
-								forceMap[index1+n].x += force.x
-								forceMap[index1+n].y += force.y
-								forceMap[index1+n].z += force.z
-							} else {
-								forceMap[index1+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index1+n].x = force.x
-								forceMap[index1+n].y = force.y
-								forceMap[index1+n].z = force.z
-							}
+										}
 
-							_, exist1 := forceMap[index1+n+len(aminoA.Atoms)]
-							if exist1 {
-								forceMap[index1+t+len(aminoA.Atoms)].x += -force.x
-								forceMap[index1+t+len(aminoA.Atoms)].y += -force.y
-								forceMap[index1+t+len(aminoA.Atoms)].z += -force.z
-							} else {
-								forceMap[index1+t+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index1+t+len(aminoA.Atoms)].x = -force.x
-								forceMap[index1+t+len(aminoA.Atoms)].y = -force.y
-								forceMap[index1+t+len(aminoA.Atoms)].z = -force.z
-							}
-						}
-					}
-				}
-			}
-			break
-		}
-		index1 += len(aminoA.Atoms)
-
-	}
-
-	// additonal for angle
-	index2 := 0
-	for m, aminoA := range p.Residue {
-		if m == len(p.Residue)-1 {
-			break
-		}
-
-		for n := range aminoA.Atoms {
-			if aminoA.Atoms[n].element == "CB" {
-				atom1 := aminoA.Atoms[n]
-
-				for g := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[g].element == "N*" {
-						atom2 := p.Residue[m+1].Atoms[g]
-						for h := g + 1; h < len(p.Residue[m+1].Atoms); h++ {
-							if p.Residue[m+1].Atoms[h].element[0] == 'H' {
-								atom3 := p.Residue[m+1].Atoms[h]
-								theta := CalculateAngle(atom1, atom2, atom3)
-								fmt.Println(theta)
-								parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
-								if len(parameterList) != 1 {
-
-									force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
-									if force_i.x > 200 || force_i.x < -200 {
-										continue
 									}
-									angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
-									_, exist := forceMap[index2+n]
-									if exist {
-										forceMap[index2+n].x += force_i.x
-										forceMap[index2+n].y += force_i.y
-										forceMap[index2+n].z += force_i.z
-									} else {
-										forceMap[index2+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index2+n].x = force_i.x
-										forceMap[index2+n].y = force_i.y
-										forceMap[index2+n].z = force_i.z
-									}
-
-									_, exist1 := forceMap[index2+g+len(aminoA.Atoms)]
-									if exist1 {
-										forceMap[index2+g+len(aminoA.Atoms)].x += force_j.x
-										forceMap[index2+g+len(aminoA.Atoms)].y += force_j.y
-										forceMap[index2+g+len(aminoA.Atoms)].z += force_j.z
-									} else {
-										forceMap[index2+g+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index2+g+len(aminoA.Atoms)].x = force_j.x
-										forceMap[index2+g+len(aminoA.Atoms)].y = force_j.y
-										forceMap[index2+g+len(aminoA.Atoms)].z = force_j.z
-									}
-
-									_, exist2 := forceMap[index2+h+len(aminoA.Atoms)]
-									if exist2 {
-										forceMap[index2+h+len(aminoA.Atoms)].x += force_k.x
-										forceMap[index2+h+len(aminoA.Atoms)].y += force_k.y
-										forceMap[index2+h+len(aminoA.Atoms)].z += force_k.z
-									} else {
-										forceMap[index2+h+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index2+h+len(aminoA.Atoms)].x = force_k.x
-										forceMap[index2+h+len(aminoA.Atoms)].y = force_k.y
-										forceMap[index2+h+len(aminoA.Atoms)].z = force_k.z
-									}
-
 								}
 							}
+
 						}
 					}
 				}
 			}
-
 		}
-		index2 += len(aminoA.Atoms)
-
+		index += len(residue.Atoms)
 	}
-
-	index3 := 0
-	for m, aminoA := range p.Residue {
-		if m == len(p.Residue)-1 {
-			break
-		}
-
-		for n := range aminoA.Atoms {
-			if aminoA.Atoms[n].element == "O" {
-				atom1 := aminoA.Atoms[n]
-				atom2 := aminoA.Atoms[n+1]
-				for g := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[g].element == "N*" {
-						atom3 := p.Residue[m+1].Atoms[g]
-						theta := CalculateAngle(atom1, atom2, atom3)
-						parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
-						if len(parameterList) != 1 {
-
-							force_i, force_j, force_k := CalculateAngleForce(parameterList[1], theta, parameterList[0], atom1, atom2, atom3)
-							if force_i.x > 200 || force_i.x < -200 {
-								continue
-							}
-							angleEnergy += CalculateAnglePotentialEnergy(parameterList[1], theta, parameterList[0])
-							_, exist := forceMap[index3+n]
-							if exist {
-								forceMap[index3+n].x += force_i.x
-								forceMap[index3+n].y += force_i.y
-								forceMap[index3+n].z += force_i.z
-							} else {
-								forceMap[index3+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index3+n].x = force_i.x
-								forceMap[index3+n].y = force_i.y
-								forceMap[index3+n].z = force_i.z
-							}
-
-							_, exist1 := forceMap[index3+n+1]
-							if exist1 {
-								forceMap[index3+n+1].x += force_j.x
-								forceMap[index3+n+1].y += force_j.y
-								forceMap[index3+n+1].z += force_j.z
-							} else {
-								forceMap[index3+n+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index3+n+1].x = force_j.x
-								forceMap[index3+n+1].y = force_j.y
-								forceMap[index3+n+1].z = force_j.z
-							}
-
-							_, exist2 := forceMap[index3+g+len(aminoA.Atoms)]
-							if exist2 {
-								forceMap[index3+g+len(aminoA.Atoms)].x += force_k.x
-								forceMap[index3+g+len(aminoA.Atoms)].y += force_k.y
-								forceMap[index3+g+len(aminoA.Atoms)].z += force_k.z
-							} else {
-								forceMap[index3+g+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index3+g+len(aminoA.Atoms)].x = force_k.x
-								forceMap[index3+g+len(aminoA.Atoms)].y = force_k.y
-								forceMap[index3+g+len(aminoA.Atoms)].z = force_k.z
-							}
-
-						}
-
-					}
-				}
-			}
-
-		}
-		index3 += len(aminoA.Atoms)
-
-	}
-
-	// additional for dihedral
-	index4 := 0
-	for m, aminoA := range p.Residue {
-		if m == len(p.Residue)-1 {
-			break
-		}
-
-		for n := range aminoA.Atoms {
-			if aminoA.Atoms[n].element == "CB" {
-				atom1 := aminoA.Atoms[n]
-				atom2 := aminoA.Atoms[n+1]
-				for g := range p.Residue[m+1].Atoms {
-					if p.Residue[m+1].Atoms[g].element == "N" {
-						atom3 := p.Residue[m+1].Atoms[g]
-						for h := g + 1; h < len(p.Residue[m+1].Atoms); h++ {
-							if p.Residue[m+1].Atoms[h].element == "H" {
-								atom4 := p.Residue[m+1].Atoms[h]
-								phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
-								parameterList := []float64{180.0, 6.90360, 2}
-								if len(parameterList) != 1 {
-
-									force_i, force_j, force_k, force_l := CalculateProperDihedralsForce(parameterList[1], phi, parameterList[2], parameterList[0], atom1, atom2, atom3, atom4)
-									if force_i.x > 200 || force_i.x < -200 {
-										continue
-									}
-									dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
-									_, exist := forceMap[index4+n]
-									if exist {
-										forceMap[index4+n].x += force_i.x
-										forceMap[index4+n].y += force_i.y
-										forceMap[index4+n].z += force_i.z
-									} else {
-										forceMap[index4+n] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index4+n].x = force_i.x
-										forceMap[index4+n].y = force_i.y
-										forceMap[index4+n].z = force_i.z
-									}
-
-									_, exist1 := forceMap[index4+n+1]
-									if exist1 {
-										forceMap[index4+n+1].x += force_j.x
-										forceMap[index4+n+1].y += force_j.y
-										forceMap[index4+n+1].z += force_j.z
-									} else {
-										forceMap[index4+n+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index4+n+1].x = force_j.x
-										forceMap[index4+n+1].y = force_j.y
-										forceMap[index4+n+1].z = force_j.z
-									}
-
-									_, exist2 := forceMap[index4+g+len(aminoA.Atoms)]
-									if exist2 {
-										forceMap[index4+g+len(aminoA.Atoms)].x += force_k.x
-										forceMap[index4+g+len(aminoA.Atoms)].y += force_k.y
-										forceMap[index4+g+len(aminoA.Atoms)].z += force_k.z
-									} else {
-										forceMap[index4+g+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index4+g+len(aminoA.Atoms)].x = force_k.x
-										forceMap[index4+g+len(aminoA.Atoms)].y = force_k.y
-										forceMap[index4+g+len(aminoA.Atoms)].z = force_k.z
-									}
-
-									_, exist3 := forceMap[index4+h+len(aminoA.Atoms)]
-									if exist3 {
-										forceMap[index4+h+len(aminoA.Atoms)].x += force_l.x
-										forceMap[index4+h+len(aminoA.Atoms)].y += force_l.y
-										forceMap[index4+h+len(aminoA.Atoms)].z += force_l.z
-									} else {
-										forceMap[index4+h+len(aminoA.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[index4+h+len(aminoA.Atoms)].x = force_l.x
-										forceMap[index4+h+len(aminoA.Atoms)].y = force_l.y
-										forceMap[index4+h+len(aminoA.Atoms)].z = force_l.z
-									}
-
-								}
-							}
-						}
-					}
-				}
-			}
-
-		}
-		index2 += len(aminoA.Atoms)
-
-	}
-
-	//  unfinished for nonbonded
 
 	totalEnergy := bondEnergy + angleEnergy + dihedralEnergy
 	return totalEnergy, forceMap
@@ -640,9 +779,59 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 		sym := 0
 		for j := range parameterData.atomPair[i].atomName {
 			if parameterData.atomPair[i].atomName[j] == "X" {
+				sym += 1
 				continue
 			}
-			if atoms[j].element[0] != parameterData.atomPair[i].atomName[j][0] {
+
+			/*
+				if parameterData.atomPair[i].atomName[j][0] == '-' {
+					if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
+						sym += 1
+						continue
+					}
+				}
+				if parameterData.atomPair[i].atomName[j][0] == '+' {
+					if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
+						sym += 1
+						continue
+					}
+				}
+			*/
+
+			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
+				break
+			}
+			sym += 1
+		}
+
+		if sym == value {
+			return parameterData.atomPair[i].parameter
+		}
+
+	}
+
+	for i := range parameterData.atomPair {
+		sym := 0
+		for j := range parameterData.atomPair[i].atomName {
+			if parameterData.atomPair[i].atomName[value-j-1] == "X" {
+				sym += 1
+				continue
+			}
+
+			if parameterData.atomPair[i].atomName[value-j-1][0] == '-' {
+				if atoms[value-j-1].element == string(parameterData.atomPair[i].atomName[value-j-1][1:]) {
+					sym += 1
+					continue
+				}
+			}
+			if parameterData.atomPair[i].atomName[value-j-1][0] == '+' {
+				if atoms[value-j-1].element == string(parameterData.atomPair[i].atomName[value-j-1][1:]) {
+					sym += 1
+					continue
+				}
+			}
+
+			if atoms[j].element != parameterData.atomPair[i].atomName[value-j-1] {
 				break
 			}
 			sym += 1
@@ -656,10 +845,6 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 
 	return []float64{0.0}
 }
-func CalculateNetForce(a int) TriTuple {
-
-	return TriTuple{x: 1.0, y: 1.0, z: 1.0}
-}
 
 func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *Protein {
 	for i := range protein.Residue {
@@ -667,7 +852,15 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 			_, exist := forceMap[protein.Residue[i].Atoms[j].index+1]
 			if exist {
 				force := forceMap[protein.Residue[i].Atoms[j].index+1]
+
+				if math.IsNaN(force.x) {
+					fmt.Println(true)
+				}
 				magn := magnitude(*force)
+				if magn == 0 || math.IsNaN(magn) {
+					continue
+				}
+
 				protein.Residue[i].Atoms[j].position.x = protein.Residue[i].Atoms[j].position.x + (force.x*h)/magn
 				protein.Residue[i].Atoms[j].position.y = protein.Residue[i].Atoms[j].position.y + (force.y*h)/magn
 				protein.Residue[i].Atoms[j].position.z = protein.Residue[i].Atoms[j].position.z + (force.z*h)/magn
@@ -688,20 +881,22 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 		z: (atom1.position.z - atom2.position.z) / bondLen,
 	}
 
-	fScale := k * (r - r_0)
+	fScale := k * (r - r_0*10)
+
+	// unit: g/s^2/mol/A
 	force := TriTuple{
-		x: fScale * unitVector.x,
-		y: fScale * unitVector.y,
-		z: fScale * unitVector.z,
+		x: fScale * unitVector.x / math.Pow10(6),
+		y: fScale * unitVector.y / math.Pow10(6),
+		z: fScale * unitVector.z / math.Pow10(6),
 	}
+
 	return force
 
 }
 
 func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (TriTuple, TriTuple, TriTuple) {
-	der_that_cos := (-1) * (1 / math.Sin(theta))
-	der_U_thate := k * (theta/360 - theta_0/360) * math.Pi
-	theta = theta / 360 * math.Pi
+	der_that_cos := (-1) * (1 / math.Sin(theta/180*math.Pi))
+	der_U_thate := k * (theta - theta_0) / 180 * math.Pi
 
 	if math.IsNaN(der_that_cos) {
 		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
@@ -716,15 +911,15 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 	der_theta_z_32 := DerivateAnglePositionZ(atom3, atom2, atom1, theta)
 
 	force_i := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_12,
-		y: der_U_thate * der_that_cos * der_theta_y_12,
-		z: der_U_thate * der_that_cos * der_theta_z_12,
+		x: der_U_thate * der_that_cos * der_theta_x_12 / math.Pow10(6),
+		y: der_U_thate * der_that_cos * der_theta_y_12 / math.Pow10(6),
+		z: der_U_thate * der_that_cos * der_theta_z_12 / math.Pow10(6),
 	}
 
 	force_k := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_32,
-		y: der_U_thate * der_that_cos * der_theta_y_32,
-		z: der_U_thate * der_that_cos * der_theta_z_32,
+		x: der_U_thate * der_that_cos * der_theta_x_32 / math.Pow10(6),
+		y: der_U_thate * der_that_cos * der_theta_y_32 / math.Pow10(6),
+		z: der_U_thate * der_that_cos * der_theta_z_32 / math.Pow10(6),
 	}
 
 	force_j := TriTuple{
@@ -754,12 +949,16 @@ func DerivateAnglePositionZ(atom1, atom2, atom3 *Atom, theta float64) float64 {
 }
 
 func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, atom3, atom4 *Atom) (TriTuple, TriTuple, TriTuple, TriTuple) {
-	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase))
+	der_U_phi := -0.5 * kd * pn * math.Sin((pn*phi - phase/180*math.Pi))
 	der_phi_cos := -1 / math.Sin(phi)
 
-	vector12 := CalculateVector(atom1, atom2)
-	vector32 := CalculateVector(atom3, atom2)
-	vector43 := CalculateVector(atom4, atom3)
+	if math.IsNaN(der_phi_cos) || math.IsNaN(der_U_phi) {
+		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
+	}
+
+	vector12 := CalculateVector(atom2, atom1)
+	vector32 := CalculateVector(atom2, atom3)
+	vector43 := CalculateVector(atom3, atom4)
 
 	v_t := Cross(vector12, vector32)
 	v_u := Cross(vector43, vector32)
@@ -768,32 +967,29 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	der_cos_ux, der_cos_uy, der_cos_uz := CalculateDerivate(v_u, v_t, phi)
 
 	force_i := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) / math.Pow10(6),
 	}
 
 	force_j := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) / math.Pow10(6),
 	}
 
 	force_k := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) / math.Pow10(6),
 	}
 
 	force_l := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y),
-		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z),
-		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x),
+		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) / math.Pow10(6),
+		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) / math.Pow10(6),
+		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) / math.Pow10(6),
 	}
 
-	if force_i.x > 100 {
-		return TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}, TriTuple{x: 0.0, y: 0.0, z: 0.0}
-	}
 	return force_i, force_j, force_k, force_l
 
 }
@@ -862,9 +1058,9 @@ func CopyTriTuple(tri TriTuple) TriTuple {
 
 func CalculateVector(atom1, atom2 *Atom) TriTuple {
 	var vector TriTuple
-	vector.x = atom2.position.x - atom1.position.x
-	vector.y = atom2.position.y - atom1.position.y
-	vector.z = atom2.position.z - atom1.position.z
+	vector.x = (atom2.position.x - atom1.position.x)
+	vector.y = (atom2.position.y - atom1.position.y)
+	vector.z = (atom2.position.z - atom1.position.z)
 
 	return vector
 }

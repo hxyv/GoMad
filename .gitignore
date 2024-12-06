@@ -26,3 +26,7 @@ go.work.sum
 
 # MACOS file
 .DS_Store
+
+# Output file
+output.pdb
+scatter.png

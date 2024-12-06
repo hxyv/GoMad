@@ -8,16 +8,18 @@ import (
 // SimulateGravity
 // Input: an initial Universe object, a number of generations, and a float time.
 // Output: a slice of numGens + 1 Universes resulting from simulating gravity over numGens generations, where the time interval between generations is specified by time.
-func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
+func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
 	timePoints := make([]Protein, 0)
-	cerition := 1000.0
+	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 1000
+	iteration := 10 // 100
+	CheckPosition(timePoints[0])
+	fmt.Println("after first check")
 	for i := 0; i < iteration; i++ {
-		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
-
+		CheckPosition(timePoints[len(timePoints)-1])
 		totalTime += time
 		if totalTime > cerition {
 			break
@@ -30,15 +32,14 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterValue map[
 // UpdateUniverse
 // Input: a Universe object and a float time.
 // Output: a Universe object resulting from a single step according to the gravity simulation, using a time interval specified by time.
-func UpdateProtein(currentProtein Protein, time float64, residueParameterValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (Protein, float64) {
+func UpdateProtein(currentProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (Protein, float64) {
 	newProtein := CopyProtein(&currentProtein)
 
-	energy, forceMap := CalculateTotalEnergyForce(newProtein, residueParameterValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+	energy, forceMap := CombineEnergyAndForce(newProtein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
+
 	forceIndex := 0
-	//fmt.Println(forceMap[forceIndex])
+
 	// range and update every body in universe
-	fmt.Println("energy")
-	fmt.Println(energy)
 	for i, b := range newProtein.Residue {
 		for j, a := range b.Atoms {
 			_, exist := forceMap[forceIndex]
@@ -117,8 +118,20 @@ func CalculateRMSD(timePoints []Protein) []float64 {
 			}
 		}
 		RMSDValue = append(RMSDValue, math.Sqrt(value/length))
-		fmt.Println(RMSDValue)
+
 	}
 
 	return RMSDValue
+}
+
+func CheckPosition(p Protein) {
+	fmt.Println("Check the nan position index")
+	for _, residue := range p.Residue {
+		for _, atom := range residue.Atoms {
+			if math.IsNaN(atom.position.x) || math.IsNaN(atom.position.y) || math.IsNaN(atom.position.z) {
+				fmt.Println(atom.index)
+			}
+
+		}
+	}
 }
