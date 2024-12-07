@@ -871,6 +871,243 @@ func TestCalculateProperDihedralsForce(t *testing.T) {
 	}
 }
 
+func TestSearchParameter(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/SearchParameter" + "/input")
+	outputFiles := ReadDirectory("Tests/SearchParameter" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		var parameterset parameterDatabase
+		atomlist, _ := ReadAtoms("Tests/SearchParameter/" + "input/" + inputFile.Name())
+		var result []float64
+		if len(atomlist) == 2 {
+			parameterset, _ = ReadParameterFile("../data/ffbonded_bondtypes.itp")
+			result = SearchParameter(len(atomlist), parameterset, &atomlist[0], &atomlist[1])
+		} else if len(atomlist) == 3 {
+			parameterset, _ = ReadParameterFile("../data/ffbonded_angletypes.itp")
+			result = SearchParameter(len(atomlist), parameterset, &atomlist[0], &atomlist[1], &atomlist[2])
+		} else if len(atomlist) == 4 {
+			parameterset, _ = ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+			result = SearchParameter(len(atomlist), parameterset, &atomlist[0], &atomlist[1], &atomlist[2], &atomlist[3])
+		}
+
+		out, _ := readFileline("Tests/SearchParameter" + "/output/" + outputFiles[i].Name())
+		realResult := convertStringToFloatSlice(out[0])
+
+		// compare
+		if len(result) == len(realResult) {
+			for j := range realResult {
+				if realResult[j] != result[j] {
+					t.Errorf("SearchParameter() = %v, want %v", result, realResult)
+				}
+			}
+		} else {
+			t.Errorf("Mismatch length, (%v, %v) in %v with %v and %v", len(realResult), len(result), outputFiles[i].Name(), realResult, result)
+		}
+	}
+
+}
+
+func TestCalculateTotalEnergyForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateTotalEnergyForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateTotalEnergyForce" + "/output")
+
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/CalculateTotalEnergyForce/" + "input/" + inputFile.Name())
+
+		// function
+		result1, result2 := CalculateTotalEnergyForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CalculateTotalEnergyForce" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult1 != result1 {
+			t.Errorf("Energy in CalculateTotalEnergyForce() = %v, want %v in %v", result1, realResult1, outputFiles[i])
+
+		}
+
+		if len(result2) == len(realResult2) {
+			for key := range result2 {
+				if (*realResult2[key]) != (*result2[key]) {
+					t.Errorf("Energy in CalculateTotalEnergyForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
+				}
+			}
+		}
+
+	}
+}
+
+func TestCombineEnergyAndForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CombineEnergyAndForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CombineEnergyAndForce" + "/output")
+
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/CombineEnergyAndForce/" + "input/" + inputFile.Name())
+
+		// function
+		result1, result2 := CombineEnergyAndForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CombineEnergyAndForce" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult1 != result1 {
+			t.Errorf("Energy in CombineEnergyAndForce() = %v, want %v in %v", result1, realResult1, outputFiles[i])
+
+		}
+
+		if len(result2) == len(realResult2) {
+			for key := range result2 {
+				if (*realResult2[key]) != (*result2[key]) {
+					t.Errorf("Energy inCombineEnergyAndForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
+				}
+			}
+		}
+
+	}
+}
+
+func TestSteepestDescent(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/SteepestDescent" + "/input")
+	outputFiles := ReadDirectory("Tests/SteepestDescent" + "/output")
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/SteepestDescent/" + "input/" + inputFile.Name())
+		h := 0.01
+		_, forceMap := CombineEnergyAndForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		result := CopyProtein(&protein)
+		// function
+		SteepestDescent(result, h, forceMap)
+
+		//real output
+		realResult, _ := ReadOneProtein("Tests/SteepestDescent/" + "output/" + outputFiles[i].Name())
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("SteepestDescent() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("SteepestDescent() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("SteepestDescent() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+
+}
+
+func TestPerformEnergyMinimization(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/PerformEnergyMinimization" + "/input")
+	outputFiles := ReadDirectory("Tests/PerformEnergyMinimization" + "/output")
+
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/PerformEnergyMinimization/" + "input/" + inputFile.Name())
+
+		// function
+		result := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult, _ := ReadOneProtein("Tests/PerformEnergyMinimization" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("PerformEnergyMinimization() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+}
+
 // //////////
 // Readtest area
 // //////////
@@ -1139,6 +1376,7 @@ func ReadOneProtein(filename string) (Protein, error) {
 	return protein, err
 }
 
+
 func ReadProteins(filename string) ([]Protein, error) {
 	var proteins []Protein
 	lines, err := readFileline(filename)
@@ -1170,6 +1408,7 @@ func ReadProteins(filename string) ([]Protein, error) {
 
 	return proteins, nil
 }
+
 
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory
