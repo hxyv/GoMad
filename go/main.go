@@ -11,7 +11,7 @@ func main() {
 	// Check(err)
 
 	filepath := "../data/calmodulin_noCA.pdb"
-	time := 0.1
+	time := 1.0
 	protein, err := readProteinFromFile(filepath)
 	Check(err)
 
