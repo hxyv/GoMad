@@ -178,7 +178,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									continue
 								}
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
-
+								fmt.Println(bondEnergy)
 								_, exist := forceMap[i+index]
 								if exist {
 									forceMap[i+index].x += force.x
@@ -911,15 +911,15 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 	der_theta_z_32 := DerivateAnglePositionZ(atom3, atom2, atom1, theta)
 
 	force_i := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_12 / math.Pow10(6),
-		y: der_U_thate * der_that_cos * der_theta_y_12 / math.Pow10(6),
-		z: der_U_thate * der_that_cos * der_theta_z_12 / math.Pow10(6),
+		x: der_U_thate * der_that_cos * der_theta_x_12 / math.Pow10(4),
+		y: der_U_thate * der_that_cos * der_theta_y_12 / math.Pow10(4),
+		z: der_U_thate * der_that_cos * der_theta_z_12 / math.Pow10(4),
 	}
 
 	force_k := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_32 / math.Pow10(6),
-		y: der_U_thate * der_that_cos * der_theta_y_32 / math.Pow10(6),
-		z: der_U_thate * der_that_cos * der_theta_z_32 / math.Pow10(6),
+		x: der_U_thate * der_that_cos * der_theta_x_32 / math.Pow10(4),
+		y: der_U_thate * der_that_cos * der_theta_y_32 / math.Pow10(4),
+		z: der_U_thate * der_that_cos * der_theta_z_32 / math.Pow10(4),
 	}
 
 	force_j := TriTuple{
@@ -967,27 +967,27 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	der_cos_ux, der_cos_uy, der_cos_uz := CalculateDerivate(v_u, v_t, phi)
 
 	force_i := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) / math.Pow10(6),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) / math.Pow10(6),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) / math.Pow10(6),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) / math.Pow10(4),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) / math.Pow10(4),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) / math.Pow10(4),
 	}
 
 	force_j := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) / math.Pow10(6),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) / math.Pow10(6),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) / math.Pow10(6),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) / math.Pow10(4),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) / math.Pow10(4),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) / math.Pow10(4),
 	}
 
 	force_k := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) / math.Pow10(6),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) / math.Pow10(6),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) / math.Pow10(6),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) / math.Pow10(4),
+		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) / math.Pow10(4),
+		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) / math.Pow10(4),
 	}
 
 	force_l := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) / math.Pow10(6),
-		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) / math.Pow10(6),
-		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) / math.Pow10(6),
+		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) / math.Pow10(4),
+		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) / math.Pow10(4),
+		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) / math.Pow10(4),
 	}
 
 	return force_i, force_j, force_k, force_l
