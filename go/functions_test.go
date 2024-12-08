@@ -37,6 +37,16 @@ type UpdateVelocityTest = struct {
 	result          TriTuple
 }
 
+type CalculateRMSDTest = struct {
+	timePoints []Protein
+	result     []float64
+}
+
+type UpdateProteinTest = struct {
+	currentProtein Protein
+	time           float64
+}
+
 // //////////
 // Test area
 // //////////
@@ -75,6 +85,21 @@ func TestUpdateVelocity(t *testing.T) {
 		// Check the result
 		if ourAnswer != test.result {
 			t.Errorf("UpdateAcceleration() = %v, want %v", ourAnswer, test.result)
+		}
+	}
+}
+
+func TestCalculateRMSDTest(t *testing.T) {
+	// Read in all tests from the Tests/Distance directory and run them
+	tests := ReadCalculateRMSDTestTests("Tests/CalculateRMSD/")
+	for _, test := range tests {
+		// Run the test
+		ourAnswer := CalculateRMSD(test.timePoints)
+		// Check the result
+		for i := range ourAnswer {
+			if ourAnswer[i] != test.result[i] {
+				t.Errorf("CalculateRMSD(%v) = %v, want %v", i, ourAnswer[i], test.result[i])
+			}
 		}
 	}
 }
@@ -164,30 +189,80 @@ func TestCopyAtom(t *testing.T) {
 	}
 }
 
-/*
 func TestCopyResidue(t *testing.T) {
 	inputFiles := ReadDirectory("Tests/CopyResidue" + "/input")
 	outputFiles := ReadDirectory("Tests/CopyResidue" + "/output")
 
 	for i, inputFile := range inputFiles {
 		// read input
-		atomlist, _ := ReadAtoms("Tests/CopyResidue/" + "input/" + inputFile.Name())
-		atom := atomlist[0]
 
+		residueList, _ := ReadResidues("Tests/CopyResidue/" + "input/" + inputFile.Name())
+		residue := residueList[0]
 		// function
-		result := CopyAtom(&atom)
+		result := CopyResidue(&residue)
 
 		// read output
-		atomlist1, _ := ReadAtoms("Tests/CopyResidue/" + "output/" + outputFiles[i].Name())
-		realResult := atomlist1[0]
+		residueList1, _ := ReadResidues("Tests/CopyResidue/" + "output/" + outputFiles[i].Name())
+		realResult := residueList1[0]
 
-		if realResult != *result {
-			t.Errorf("CopyAtom() = %v, want %v", result, realResult)
+		// compare
+		if realResult.ChainID != result.ChainID || realResult.Name != result.Name || realResult.ID != result.ID {
+			t.Errorf("CopyResidue() = %v, want %v", result, realResult)
+		}
+
+		// compare atoms
+		if len(realResult.Atoms) == len(result.Atoms) {
+			for i := range realResult.Atoms {
+				if (*realResult.Atoms[i]) != (*result.Atoms[i]) {
+					t.Errorf("CopyResidue() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+				}
+			}
+		} else {
+			t.Errorf("Number mismatch")
 		}
 
 	}
 }
-*/
+
+func TestCopyProtein(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CopyProtein" + "/input")
+	outputFiles := ReadDirectory("Tests/CopyProtein" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+
+		protein, _ := ReadOneProtein("Tests/CopyProtein/" + "input/" + inputFile.Name())
+
+		// function
+		result := CopyProtein(&protein)
+
+		// read output
+
+		realResult, _ := ReadOneProtein("Tests/CopyProtein/" + "output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("CopyProtein() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("CopyProtein() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("CopyProtein() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+}
 
 func TestCross(t *testing.T) {
 	inputFiles := ReadDirectory("Tests/Cross" + "/input")
@@ -796,9 +871,273 @@ func TestCalculateProperDihedralsForce(t *testing.T) {
 	}
 }
 
+func TestSearchParameter(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/SearchParameter" + "/input")
+	outputFiles := ReadDirectory("Tests/SearchParameter" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		var parameterset parameterDatabase
+		atomlist, _ := ReadAtoms("Tests/SearchParameter/" + "input/" + inputFile.Name())
+		var result []float64
+		if len(atomlist) == 2 {
+			parameterset, _ = ReadParameterFile("../data/ffbonded_bondtypes.itp")
+			result = SearchParameter(len(atomlist), parameterset, &atomlist[0], &atomlist[1])
+		} else if len(atomlist) == 3 {
+			parameterset, _ = ReadParameterFile("../data/ffbonded_angletypes.itp")
+			result = SearchParameter(len(atomlist), parameterset, &atomlist[0], &atomlist[1], &atomlist[2])
+		} else if len(atomlist) == 4 {
+			parameterset, _ = ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+			result = SearchParameter(len(atomlist), parameterset, &atomlist[0], &atomlist[1], &atomlist[2], &atomlist[3])
+		}
+
+		out, _ := readFileline("Tests/SearchParameter" + "/output/" + outputFiles[i].Name())
+		realResult := convertStringToFloatSlice(out[0])
+
+		// compare
+		if len(result) == len(realResult) {
+			for j := range realResult {
+				if realResult[j] != result[j] {
+					t.Errorf("SearchParameter() = %v, want %v", result, realResult)
+				}
+			}
+		} else {
+			t.Errorf("Mismatch length, (%v, %v) in %v with %v and %v", len(realResult), len(result), outputFiles[i].Name(), realResult, result)
+		}
+	}
+
+}
+
+func TestCalculateTotalEnergyForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CalculateTotalEnergyForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateTotalEnergyForce" + "/output")
+
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/CalculateTotalEnergyForce/" + "input/" + inputFile.Name())
+
+		// function
+		result1, result2 := CalculateTotalEnergyForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CalculateTotalEnergyForce" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult1 != result1 {
+			t.Errorf("Energy in CalculateTotalEnergyForce() = %v, want %v in %v", result1, realResult1, outputFiles[i])
+
+		}
+
+		if len(result2) == len(realResult2) {
+			for key := range result2 {
+				if (*realResult2[key]) != (*result2[key]) {
+					t.Errorf("Energy in CalculateTotalEnergyForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
+				}
+			}
+		}
+
+	}
+}
+
+func TestCombineEnergyAndForce(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/CombineEnergyAndForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CombineEnergyAndForce" + "/output")
+
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/CombineEnergyAndForce/" + "input/" + inputFile.Name())
+
+		// function
+		result1, result2 := CombineEnergyAndForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CombineEnergyAndForce" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult1 != result1 {
+			t.Errorf("Energy in CombineEnergyAndForce() = %v, want %v in %v", result1, realResult1, outputFiles[i])
+
+		}
+
+		if len(result2) == len(realResult2) {
+			for key := range result2 {
+				if (*realResult2[key]) != (*result2[key]) {
+					t.Errorf("Energy inCombineEnergyAndForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
+				}
+			}
+		}
+
+	}
+}
+
+func TestSteepestDescent(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/SteepestDescent" + "/input")
+	outputFiles := ReadDirectory("Tests/SteepestDescent" + "/output")
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/SteepestDescent/" + "input/" + inputFile.Name())
+		h := 0.01
+		_, forceMap := CombineEnergyAndForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		result := CopyProtein(&protein)
+		// function
+		SteepestDescent(result, h, forceMap)
+
+		//real output
+		realResult, _ := ReadOneProtein("Tests/SteepestDescent/" + "output/" + outputFiles[i].Name())
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("SteepestDescent() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("SteepestDescent() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("SteepestDescent() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+
+}
+
+func TestPerformEnergyMinimization(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/PerformEnergyMinimization" + "/input")
+	outputFiles := ReadDirectory("Tests/PerformEnergyMinimization" + "/output")
+
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/PerformEnergyMinimization/" + "input/" + inputFile.Name())
+
+		// function
+		result := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult, _ := ReadOneProtein("Tests/PerformEnergyMinimization" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range protein.Residue {
+			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
+				}
+				for j := range protein.Residue[i].Atoms {
+					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("PerformEnergyMinimization() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
+	}
+}
+
 // //////////
 // Readtest area
 // //////////
+
+func ReadCalculateRMSDTestTests(directory string) []CalculateRMSDTest {
+
+	//read in all tests from the directory and run them
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateRMSDTest, numFiles)
+	for i, inputFile := range inputFiles {
+		tests[i].timePoints, _ = ReadProteins(directory + "input/" + inputFile.Name())
+	}
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFile := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFile.Name())
+		tests[i].result = convertStringToFloatSlice(out[0])
+	}
+
+	return tests
+}
+
 // func ReadUpdateAcceleration read the input and output file for UpdateAccelerationTest
 func ReadUpdateAccelerationTests(directory string) []UpdateAccelerationTest {
 
@@ -925,6 +1264,14 @@ func ReadUpdateVelocityTests(directory string) []UpdateVelocityTest {
 	return tests
 }
 
+// /////
+// /////
+// Read func
+// ////
+// ////
+// ReadDirectory reads in a directory and returns a slice of fs.DirEntry objects containing file info for the directory
+////
+
 func ReadAtoms(filename string) ([]Atom, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
@@ -970,12 +1317,13 @@ func ReadOneAtom(line []string) Atom {
 func ReadOneResidue(lines []string) Residue {
 	var residue Residue
 	var atoms []*Atom
-	for i, _ := range lines {
+	for i := range lines {
 		line := strings.Split(lines[i], " ")
 		if i == 0 {
 			residue.Name = line[0]
-			residue.ID, _ = strconv.Atoi(line[1])
-			residue.ChainID = line[2]
+			residue.ChainID = line[1]
+			residue.ID, _ = strconv.Atoi(line[2])
+
 			continue
 		}
 
@@ -987,29 +1335,81 @@ func ReadOneResidue(lines []string) Residue {
 	return residue
 }
 
-/*
 func ReadResidues(filename string) ([]Residue, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := 0; i < len(lines)/2; i++{
-		var residue Residue
-		line1 := strings.Split(lines[2*i], " ")
-		residue.ChainID = line1[0]
-        residue.ID, _ = strconv.Atoi(line1[1])
+	var residues []Residue
+
+	for i := 0; i < len(lines); i++ {
+		line1 := strings.Split(lines[i], " ")
+		AtomLen, _ := strconv.Atoi(line1[3])
+		residue := ReadOneResidue(lines[i : i+AtomLen+1])
+		residues = append(residues, residue)
 
 	}
-}
-*/
 
-// /////
-// /////
-// Read func
-// ////
-// ////
-// ReadDirectory reads in a directory and returns a slice of fs.DirEntry objects containing file info for the directory
+	return residues, err
+}
+
+func ReadOneProtein(filename string) (Protein, error) {
+	var protein Protein
+	lines, err := readFileline(filename)
+	if err != nil {
+		return protein, err
+	}
+
+	firstLine := strings.Split(lines[0], " ")
+	protein.Name = firstLine[0]
+	residueLen, _ := strconv.Atoi(firstLine[1])
+	startIndex := 1
+	for j := 0; j < residueLen; j++ {
+		line := strings.Split(lines[startIndex], " ")
+		AtomLen, _ := strconv.Atoi(line[3])
+		residue := ReadOneResidue(lines[startIndex : startIndex+AtomLen+1])
+		protein.Residue = append(protein.Residue, &residue)
+		startIndex += AtomLen + 1
+	}
+
+	return protein, err
+}
+
+
+func ReadProteins(filename string) ([]Protein, error) {
+	var proteins []Protein
+	lines, err := readFileline(filename)
+	if err != nil {
+		return proteins, err
+	}
+
+	i := 0
+	for i < len(lines) {
+		// Check if the current line starts a new protein
+		if strings.HasPrefix(lines[i], "Protein") {
+			firstLine := strings.Split(lines[i], " ")
+			protein := Protein{Name: firstLine[0]}
+			residueLen, _ := strconv.Atoi(firstLine[1])
+
+			i++ // Move to the first residue line
+			for j := 0; j < residueLen; j++ {
+				line := strings.Split(lines[i], " ")
+				AtomLen, _ := strconv.Atoi(line[3])
+				residue := ReadOneResidue(lines[i : i+AtomLen+1])
+				protein.Residue = append(protein.Residue, &residue)
+				i += AtomLen + 1
+			}
+			proteins = append(proteins, protein)
+		} else {
+			i++ // Skip any unrelated lines
+		}
+	}
+
+	return proteins, nil
+}
+
+
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory
 	files, err := os.ReadDir(dir)
