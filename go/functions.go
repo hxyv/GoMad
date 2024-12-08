@@ -104,11 +104,23 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 		}
 	}
 
+	if tri, ok := totalForceMap[500]; ok {
+		// Check if any value is greater than 1 and print it
+		if tri.x > 1.0 || tri.x < -1.0 {
+			fmt.Printf("x=%f is greater than 1\n", tri.x)
+		}
+		if tri.y > 1.0 || tri.y < -1.0 {
+			fmt.Printf("y=%f is greater than 1\n", tri.y)
+		}
+		if tri.z > 1.0 || tri.z < -1.0 {
+			fmt.Printf("z=%f is greater than 1\n", tri.z)
+		}
+	}
 	return totalEnergy, totalForceMap
 }
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	iteration := 50
+	iteration := 20
 	// set maximum displacement
 	h := 0.01
 
@@ -178,7 +190,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									continue
 								}
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
-								fmt.Println(bondEnergy)
 								_, exist := forceMap[i+index]
 								if exist {
 									forceMap[i+index].x += force.x

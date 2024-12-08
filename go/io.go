@@ -271,10 +271,9 @@ func ReadAminoAcidsPara(fileName string) (map[string]residueParameter, error) {
 			}
 		case "bonds":
 			parts := strings.Fields(line)
-			if len(parts) >= 3 {
+			if len(parts) == 2 || len(parts) >= 3 {
 				currentResidue.bonds = append(currentResidue.bonds, &bonds{
 					atoms: []string{parts[0], parts[1]},
-					para:  parts[2],
 				})
 			}
 		case "angles":

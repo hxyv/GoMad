@@ -93,7 +93,6 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 		for _, atom1 := range residue.Atoms {
 			// Initialize force for atom1
 			forceMap[atom1.index] = &TriTuple{0.0, 0.0, 0.0}
-
 			// Access the Neighbors map using the dereferenced verletList
 			neighbors, exists := verletList.Neighbors[atom1]
 			if !exists {
@@ -127,7 +126,6 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				totalEnergy += electricPotentialEnergy
 				// Calculate the electric force between atom1 and atom2
 				electricForce := CalculateElectricForce(atom1, atom2, r)
-
 				// Update the force map for atom1
 				forceMap[atom1.index].x += electricForce.x
 				forceMap[atom1.index].y += electricForce.y
