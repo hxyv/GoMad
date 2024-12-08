@@ -11,12 +11,9 @@ func main() {
 	// Check(err)
 
 	filepath := "../data/calmodulin_noCA.pdb"
-	time := 1.0
+	time := 0.1
 	protein, err := readProteinFromFile(filepath)
 	Check(err)
-	for _, residue := range protein.Residue {
-		fmt.Println(residue.ID)
-	}
 
 	// Parse the charge data file
 	chargeData, err := parseChargeFile("../data/OPLS_atom_charge.rtp")
@@ -48,9 +45,6 @@ func main() {
 	TemporaryPlot(RMSD, time)
 	writeRMSD(RMSD)
 	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
-	for _, residue := range timepoints[len(timepoints)-1].Residue {
-		fmt.Println(residue.ID)
-	}
 }
 
 func Check(err error) {

@@ -1,8 +1,8 @@
 package main
 
-const epsilon = 55.26349406 // vacuum dielectric permittivity
+const f = 138.935458 // electric conversion factor
 
-const verletCutOff = 3.5
+const verletCutOff = 10.0
 const verletBuffer = 0.0
 
 type TriTuple struct {

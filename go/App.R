@@ -34,7 +34,7 @@ ui <- fluidPage(
       plotOutput("outputPlot", height = "300px"),
       hr(),
       h3("Structure Visualization", style = "color: #34495E;"),
-      NGLVieweROutput("nglViewer", height = "300px"),
+      NGLVieweROutput("nglViewer", height = "500px"),
       hr(),
       p("The above plot shows the RMSD of the protein over simulation time, and the structure is visualized using NGLVieweR.",
         style = "font-size: 12px; color: #7B7D7D;")
@@ -104,12 +104,21 @@ server <- function(input, output) {
       output$outputPlot <- renderPlot({
         rmsd_plot
       })
-      
+      print(file_path)
       # Render the structural visualization in Shiny
       output$nglViewer <- renderNGLVieweR({
         NGLVieweR("result/output.pdb") %>%
-          addRepresentation("cartoon") %>%
-          setQuality("high")
+              addRepresentation("cartoon", param = list(color = "blue")) %>%
+              addStructure(file_path) %>%
+              addRepresentation("cartoon", param = list(color = "orange")) %>%
+              setSuperpose(
+                  reference = 1, 
+                  sele_reference = ":A", 
+                  sele_target = ":A", 
+                  superpose = TRUE
+              ) %>% 
+          setQuality("high") %>%
+              stageParameters(backgroundColor = "white", zoomSpeed = 1)
       })
       
       incProgress(1, detail = "Complete!")

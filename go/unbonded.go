@@ -6,28 +6,20 @@ import (
 
 // a1: the atom 1
 // a2: the atom 2
-// epsilon: the vacuum dielectric permittivity
+// electricConversionFactor: electric conversion factor
 // r: distance between q1 and q2
 func CalculateElectricPotentialEnergy(a1, a2 *Atom, r float64) float64 {
-	chargeMagnitude := a1.charge * a2.charge
-
-	if chargeMagnitude < 0.0 {
-		return -chargeMagnitude / (4 * math.Pi * epsilon * r)
-	}
-
-	return chargeMagnitude / (4 * math.Pi * epsilon * r)
+	return f * a1.charge * a2.charge / (r * 0.1)
 }
 
 // A: coefficient 1
 // B: coefficient 2
 // r: distance between atom 1 and atom 2
 func CalculateLJPotentialEnergy(B, A, r float64) float64 {
+	r = r * 0.1
 	r_6 := math.Pow(r, 6)
 	r_12 := r_6 * r_6
 	LJ := (A / r_12) - (B / r_6)
-	if LJ < 0 {
-		return -LJ
-	}
 	return LJ
 }
 
@@ -52,7 +44,7 @@ func (v *VerletList) BuildVerlet(protein *Protein) {
 						continue
 					}
 					// Exclude atoms within 3 bonds
-					if otherAtom.index >= atom.index-3 && otherAtom.index <= atom.index+3 {
+					if otherAtom.index >= atom.index-4 && otherAtom.index <= atom.index+4 {
 						continue
 					}
 					distance := Distance(atom.position, otherAtom.position)
@@ -116,6 +108,7 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				parameterList := SearchParameter(2, nonbondedParameter, atom1, atom2)
 				if len(parameterList) == 2 {
 					LJPotentialEnergy := CalculateLJPotentialEnergy(parameterList[0], parameterList[1], r)
+
 					totalEnergy += LJPotentialEnergy
 					// Calculate the Lennard-Jones force between atom1 and atom2
 					LJForce := CalculateLJForce(atom1, atom2, parameterList[0], parameterList[1], r)
@@ -147,40 +140,44 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 }
 
 func CalculateElectricForce(a1, a2 *Atom, r float64) TriTuple {
-	chargeMagnitude := a1.charge * a2.charge
-
-	forceMagnitude := 0.0
-	if chargeMagnitude > 0.0 {
-		forceMagnitude = chargeMagnitude / (4 * math.Pi * epsilon * r * r)
-	} else {
-		forceMagnitude = -chargeMagnitude / (4 * math.Pi * epsilon * r * r)
-	}
-
 	unitVector := TriTuple{
 		x: (a2.position.x - a1.position.x) / r,
 		y: (a2.position.y - a1.position.y) / r,
 		z: (a2.position.z - a1.position.z) / r,
 	}
+
+	r = r * 0.1
+	chargeMagnitude := a1.charge * a2.charge
+	forceMagnitude := 0.0
+	if chargeMagnitude > 0.0 {
+		forceMagnitude = f * chargeMagnitude / (r * r)
+	} else {
+		forceMagnitude = -f * chargeMagnitude / (r * r)
+	}
+
 	return TriTuple{
-		x: forceMagnitude * unitVector.x,
-		y: forceMagnitude * unitVector.y,
-		z: forceMagnitude * unitVector.z,
+		x: forceMagnitude * unitVector.x * 1e-5,
+		y: forceMagnitude * unitVector.y * 1e-5,
+		z: forceMagnitude * unitVector.z * 1e-5,
 	}
 }
 
 func CalculateLJForce(a1, a2 *Atom, B, A, r float64) TriTuple {
-	r_6 := math.Pow(r, 6)
-	r_12 := r_6 * r_6
-
-	forceMagnitude := (-12*A/r_12 + 6*B/r_6) / r
 	unitVector := TriTuple{
 		x: (a2.position.x - a1.position.x) / r,
 		y: (a2.position.y - a1.position.y) / r,
 		z: (a2.position.z - a1.position.z) / r,
 	}
+
+	r = r * 0.1
+	r_6 := math.Pow(r, 6)
+	r_12 := r_6 * r_6
+
+	forceMagnitude := (-12*A/r_12 + 6*B/r_6) / r
+
 	return TriTuple{
-		x: forceMagnitude * unitVector.x,
-		y: forceMagnitude * unitVector.y,
-		z: forceMagnitude * unitVector.z,
+		x: forceMagnitude * unitVector.x * 1e-5,
+		y: forceMagnitude * unitVector.y * 1e-5,
+		z: forceMagnitude * unitVector.z * 1e-5,
 	}
 }
