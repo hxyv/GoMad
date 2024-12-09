@@ -1376,7 +1376,6 @@ func ReadOneProtein(filename string) (Protein, error) {
 	return protein, err
 }
 
-
 func ReadProteins(filename string) ([]Protein, error) {
 	var proteins []Protein
 	lines, err := readFileline(filename)
@@ -1408,7 +1407,6 @@ func ReadProteins(filename string) ([]Protein, error) {
 
 	return proteins, nil
 }
-
 
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory

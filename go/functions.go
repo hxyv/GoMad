@@ -155,6 +155,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 		// range over each bond
 
 		for _, bondPairs := range residueParameterBondValue[residue.Name].bonds {
+			fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
 				if atom1.element == (*bondPairs).atoms[0] {
@@ -162,17 +163,15 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
+							fmt.Println(atom1.element, atom2.element)
 							r := Distance(atom1.position, atom2.position)
 							if r == 0 {
-								continue
-							}
-							if r > 2 {
 								continue
 							}
 
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 							if len(parameterList) != 1 {
-
+								fmt.Println(atom1.element, atom2.element)
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 								if math.IsNaN(force.x) {
 									continue
@@ -783,20 +782,20 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				continue
 			}
 
-			/*
-				if parameterData.atomPair[i].atomName[j][0] == '-' {
-					if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
-						sym += 1
-						continue
-					}
-				}
-				if parameterData.atomPair[i].atomName[j][0] == '+' {
-					if atoms[j].element == string(parameterData.atomPair[i].atomName[j][1:]) {
-						sym += 1
-						continue
-					}
-				}
-			*/
+			if parameterData.atomPair[i].atomName[j][0] == 'H' && atoms[j].element[0] == 'H' {
+				sym += 1
+				continue
+			}
+
+			if parameterData.atomPair[i].atomName[j] == "N*" && atoms[j].element == "N" {
+				sym += 1
+				continue
+			}
+
+			if parameterData.atomPair[i].atomName[j] == "C*" && atoms[j].element == "C" {
+				sym += 1
+				continue
+			}
 
 			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
 				break
@@ -818,17 +817,19 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				continue
 			}
 
-			if parameterData.atomPair[i].atomName[value-j-1][0] == '-' {
-				if atoms[value-j-1].element == string(parameterData.atomPair[i].atomName[value-j-1][1:]) {
-					sym += 1
-					continue
-				}
+			if parameterData.atomPair[i].atomName[value-j-1][0] == 'H' && atoms[j].element[0] == 'H' {
+				sym += 1
+				continue
 			}
-			if parameterData.atomPair[i].atomName[value-j-1][0] == '+' {
-				if atoms[value-j-1].element == string(parameterData.atomPair[i].atomName[value-j-1][1:]) {
-					sym += 1
-					continue
-				}
+
+			if parameterData.atomPair[i].atomName[value-j-1] == "N*" && atoms[j].element == "N" {
+				sym += 1
+				continue
+			}
+
+			if parameterData.atomPair[i].atomName[value-j-1] == "C*" && atoms[j].element == "C" {
+				sym += 1
+				continue
 			}
 
 			if atoms[j].element != parameterData.atomPair[i].atomName[value-j-1] {
@@ -874,6 +875,7 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 }
 
 func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
+	//fmt.Println(atom1.element, atom2.element)
 	bondLen := Distance(atom1.position, atom2.position)
 	unitVector := TriTuple{
 		x: (atom1.position.x - atom2.position.x) / bondLen,
