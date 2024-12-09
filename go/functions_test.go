@@ -37,16 +37,6 @@ type UpdateVelocityTest = struct {
 	result          TriTuple
 }
 
-type CalculateRMSDTest = struct {
-	timePoints []Protein
-	result     []float64
-}
-
-type UpdateProteinTest = struct {
-	currentProtein Protein
-	time           float64
-}
-
 // //////////
 // Test area
 // //////////
@@ -85,21 +75,6 @@ func TestUpdateVelocity(t *testing.T) {
 		// Check the result
 		if ourAnswer != test.result {
 			t.Errorf("UpdateAcceleration() = %v, want %v", ourAnswer, test.result)
-		}
-	}
-}
-
-func TestCalculateRMSDTest(t *testing.T) {
-	// Read in all tests from the Tests/Distance directory and run them
-	tests := ReadCalculateRMSDTestTests("Tests/CalculateRMSD/")
-	for _, test := range tests {
-		// Run the test
-		ourAnswer := CalculateRMSD(test.timePoints)
-		// Check the result
-		for i := range ourAnswer {
-			if ourAnswer[i] != test.result[i] {
-				t.Errorf("CalculateRMSD(%v) = %v, want %v", i, ourAnswer[i], test.result[i])
-			}
 		}
 	}
 }
@@ -1111,33 +1086,6 @@ func TestPerformEnergyMinimization(t *testing.T) {
 // //////////
 // Readtest area
 // //////////
-
-func ReadCalculateRMSDTestTests(directory string) []CalculateRMSDTest {
-
-	//read in all tests from the directory and run them
-	inputFiles := ReadDirectory(directory + "/input")
-	numFiles := len(inputFiles)
-
-	tests := make([]CalculateRMSDTest, numFiles)
-	for i, inputFile := range inputFiles {
-		tests[i].timePoints, _ = ReadProteins(directory + "input/" + inputFile.Name())
-	}
-	//now, read output files
-	outputFiles := ReadDirectory(directory + "/output")
-
-	//ensure same number of input and output files
-	if len(outputFiles) != numFiles {
-		panic("Error: number of input and output files do not match!")
-	}
-
-	for i, outputFile := range outputFiles {
-		out, _ := readFileline(directory + "output/" + outputFile.Name())
-		tests[i].result = convertStringToFloatSlice(out[0])
-	}
-
-	return tests
-}
-
 // func ReadUpdateAcceleration read the input and output file for UpdateAccelerationTest
 func ReadUpdateAccelerationTests(directory string) []UpdateAccelerationTest {
 
@@ -1264,14 +1212,6 @@ func ReadUpdateVelocityTests(directory string) []UpdateVelocityTest {
 	return tests
 }
 
-// /////
-// /////
-// Read func
-// ////
-// ////
-// ReadDirectory reads in a directory and returns a slice of fs.DirEntry objects containing file info for the directory
-////
-
 func ReadAtoms(filename string) ([]Atom, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
@@ -1317,7 +1257,7 @@ func ReadOneAtom(line []string) Atom {
 func ReadOneResidue(lines []string) Residue {
 	var residue Residue
 	var atoms []*Atom
-	for i := range lines {
+	for i, _ := range lines {
 		line := strings.Split(lines[i], " ")
 		if i == 0 {
 			residue.Name = line[0]
@@ -1376,38 +1316,33 @@ func ReadOneProtein(filename string) (Protein, error) {
 	return protein, err
 }
 
-func ReadProteins(filename string) ([]Protein, error) {
-	var proteins []Protein
+func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
-		return proteins, err
+		return math.NaN(), nil, err
 	}
 
-	i := 0
-	for i < len(lines) {
-		// Check if the current line starts a new protein
-		if strings.HasPrefix(lines[i], "Protein") {
-			firstLine := strings.Split(lines[i], " ")
-			protein := Protein{Name: firstLine[0]}
-			residueLen, _ := strconv.Atoi(firstLine[1])
-
-			i++ // Move to the first residue line
-			for j := 0; j < residueLen; j++ {
-				line := strings.Split(lines[i], " ")
-				AtomLen, _ := strconv.Atoi(line[3])
-				residue := ReadOneResidue(lines[i : i+AtomLen+1])
-				protein.Residue = append(protein.Residue, &residue)
-				i += AtomLen + 1
-			}
-			proteins = append(proteins, protein)
-		} else {
-			i++ // Skip any unrelated lines
-		}
+	var energy float64
+	var Map map[int]*TriTuple
+	for i := range lines {
+		line := strings.Split(lines[i], " ")
+		energy, _ = strconv.ParseFloat(line[0], 64)
+		key, _ := strconv.Atoi(line[1])
+		var value TriTuple
+		value.x, _ = strconv.ParseFloat(line[2], 64)
+		value.y, _ = strconv.ParseFloat(line[3], 64)
+		value.z, _ = strconv.ParseFloat(line[4], 64)
+		Map[key] = &value
 	}
-
-	return proteins, nil
+	return energy, Map, nil
 }
 
+// /////
+// /////
+// Read func
+// ////
+// ////
+// ReadDirectory reads in a directory and returns a slice of fs.DirEntry objects containing file info for the directory
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory
 	files, err := os.ReadDir(dir)
