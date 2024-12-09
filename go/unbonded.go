@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -48,7 +49,7 @@ func (v *VerletList) BuildVerlet(protein *Protein) {
 						continue
 					}
 					distance := Distance(atom.position, otherAtom.position)
-					if distance <= cutoffPlusBuffer {
+					if distance <= cutoffPlusBuffer && distance > 2.5 {
 						v.Neighbors[atom] = append(v.Neighbors[atom], otherAtom)
 					}
 				}
@@ -91,6 +92,7 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 
 	for _, residue := range p.Residue {
 		for _, atom1 := range residue.Atoms {
+
 			// Initialize force for atom1
 			forceMap[atom1.index] = &TriTuple{0.0, 0.0, 0.0}
 			// Access the Neighbors map using the dereferenced verletList
@@ -111,12 +113,15 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 					totalEnergy += LJPotentialEnergy
 					// Calculate the Lennard-Jones force between atom1 and atom2
 					LJForce := CalculateLJForce(atom1, atom2, parameterList[0], parameterList[1], r)
+					if LJForce.x > 10 {
+						fmt.Println("Distance between two atoms is:", Distance(atom1.position, atom2.position))
+						fmt.Printf("LJ force at %d %s due to %s at %d is %f:\n", atom1.index, atom1.element, atom2.element, atom2.index, LJForce)
+					}
 					// Update the force map for atom1
 					forceMap[atom1.index].x += LJForce.x
 					forceMap[atom1.index].y += LJForce.y
 					forceMap[atom1.index].z += LJForce.z
 				}
-
 				if atom1.charge == 0.0 || atom2.charge == 0.0 {
 					continue
 				}
@@ -130,6 +135,10 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				forceMap[atom1.index].x += electricForce.x
 				forceMap[atom1.index].y += electricForce.y
 				forceMap[atom1.index].z += electricForce.z
+
+				// if atom1.index == 961 {
+				// 	fmt.Printf("Electrostatic force at 962 %s due to %s at %d is %f:\n", atom1.element, atom2.element, atom2.index, electricForce)
+				// }
 			}
 		}
 	}
@@ -152,12 +161,13 @@ func CalculateElectricForce(a1, a2 *Atom, r float64) TriTuple {
 	} else {
 		forceMagnitude = -f * chargeMagnitude / (r * r)
 	}
-
-	return TriTuple{
+	force := TriTuple{
 		x: forceMagnitude * unitVector.x * 1e-5,
 		y: forceMagnitude * unitVector.y * 1e-5,
 		z: forceMagnitude * unitVector.z * 1e-5,
 	}
+
+	return force
 }
 
 func CalculateLJForce(a1, a2 *Atom, B, A, r float64) TriTuple {
@@ -172,10 +182,10 @@ func CalculateLJForce(a1, a2 *Atom, B, A, r float64) TriTuple {
 	r_12 := r_6 * r_6
 
 	forceMagnitude := (-12*A/r_12 + 6*B/r_6) / r
-
-	return TriTuple{
+	force := TriTuple{
 		x: forceMagnitude * unitVector.x * 1e-5,
 		y: forceMagnitude * unitVector.y * 1e-5,
 		z: forceMagnitude * unitVector.z * 1e-5,
 	}
+	return force
 }
