@@ -1337,12 +1337,6 @@ func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error
 	return energy, Map, nil
 }
 
-// /////
-// /////
-// Read func
-// ////
-// ////
-// ReadDirectory reads in a directory and returns a slice of fs.DirEntry objects containing file info for the directory
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory
 	files, err := os.ReadDir(dir)

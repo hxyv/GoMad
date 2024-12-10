@@ -72,7 +72,6 @@ func magnitude(vector TriTuple) float64 {
 func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	// Calculate total energy and forces of bonded interactions
 	bondedEnergy, bondedForceMap := CalculateTotalEnergyForce(p, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
-
 	// Calculate total energy and forces of unbonded interactions
 	unbondedEnergy, unbondedForceMap := CalculateTotalUnbondedEnergyForce(p, nonbondParameter)
 	fmt.Println("bondedEnergy is:", bondedEnergy)
@@ -104,23 +103,11 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 		}
 	}
 
-	if tri, ok := totalForceMap[500]; ok {
-		// Check if any value is greater than 1 and print it
-		if tri.x > 1.0 || tri.x < -1.0 {
-			fmt.Printf("x=%f is greater than 1\n", tri.x)
-		}
-		if tri.y > 1.0 || tri.y < -1.0 {
-			fmt.Printf("y=%f is greater than 1\n", tri.y)
-		}
-		if tri.z > 1.0 || tri.z < -1.0 {
-			fmt.Printf("z=%f is greater than 1\n", tri.z)
-		}
-	}
 	return totalEnergy, totalForceMap
 }
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	iteration := 20
+	iteration := 50
 	// set maximum displacement
 	h := 0.01
 
@@ -160,7 +147,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 	angleEnergy := 0.0
 	dihedralEnergy := 0.0
 
-	index := 0
+	index := 1
 	for w, residue := range p.Residue {
 
 		// Calculate bondstretch energy
@@ -170,6 +157,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 			fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
+
 				if atom1.element == (*bondPairs).atoms[0] {
 					for j := i + 1; j < len(residue.Atoms); j++ {
 						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
@@ -189,6 +177,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									continue
 								}
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
+								fmt.Println(bondEnergy)
 								_, exist := forceMap[i+index]
 								if exist {
 									forceMap[i+index].x += force.x
@@ -280,6 +269,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 					for a := range p.Residue[w-1].Atoms {
 						if p.Residue[w-1].Atoms[a].element == "C" {
 							atom1 := p.Residue[w-1].Atoms[a]
+
 							for i := 0; i < len(residue.Atoms)-1; i++ {
 								if residue.Atoms[i].element == (*angleTris).atoms[1] {
 									atom2 := residue.Atoms[i]
@@ -380,7 +370,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 											forceMap[i+index].y = force_i.y
 											forceMap[i+index].z = force_i.z
 										}
-
 										_, exist1 := forceMap[j+index]
 										if exist1 {
 											forceMap[j+index].x += force_j.x
@@ -404,7 +393,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 											forceMap[k+index].y = force_k.y
 											forceMap[k+index].z = force_k.z
 										}
-
 									}
 
 								}
@@ -904,7 +892,6 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 	}
 
 	return force
-
 }
 
 func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (TriTuple, TriTuple, TriTuple) {
