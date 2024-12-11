@@ -49,7 +49,7 @@ func CalculateDihedralAngle(atom1, atom2, atom3, atom4 *Atom) float64 {
 	y := magnitude(plane1) * magnitude(plane2)
 	angle := math.Acos(x / y)
 
-	return math.Abs(angle * (180 / math.Pi))
+	return angle * (180 / math.Pi)
 }
 
 func BuildNormalVector(vector1, vector2 TriTuple) TriTuple {
@@ -154,7 +154,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 		// range over each bond
 
 		for _, bondPairs := range residueParameterBondValue[residue.Name].bonds {
-			fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
+			//fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
 
@@ -163,7 +163,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
-							fmt.Println(atom1.element, atom2.element)
+
 							r := Distance(atom1.position, atom2.position)
 							if r == 0 {
 								continue
@@ -171,7 +171,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 							if len(parameterList) != 1 {
-								fmt.Println(atom1.element, atom2.element)
+
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 								if math.IsNaN(force.x) {
 									continue
@@ -877,9 +877,9 @@ func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
 	//fmt.Println(atom1.element, atom2.element)
 	bondLen := Distance(atom1.position, atom2.position)
 	unitVector := TriTuple{
-		x: (atom1.position.x - atom2.position.x) / bondLen,
-		y: (atom1.position.y - atom2.position.y) / bondLen,
-		z: (atom1.position.z - atom2.position.z) / bondLen,
+		x: -(atom1.position.x - atom2.position.x) / bondLen,
+		y: -(atom1.position.y - atom2.position.y) / bondLen,
+		z: -(atom1.position.z - atom2.position.z) / bondLen,
 	}
 
 	fScale := k * (r - r_0*10)
@@ -911,21 +911,21 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 	der_theta_z_32 := DerivateAnglePositionZ(atom3, atom2, atom1, theta)
 
 	force_i := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_12 / math.Pow10(4),
-		y: der_U_thate * der_that_cos * der_theta_y_12 / math.Pow10(4),
-		z: der_U_thate * der_that_cos * der_theta_z_12 / math.Pow10(4),
+		x: der_U_thate * der_that_cos * der_theta_x_12 / math.Pow10(4) * 2 * math.Pi,
+		y: der_U_thate * der_that_cos * der_theta_y_12 / math.Pow10(4) * 2 * math.Pi,
+		z: der_U_thate * der_that_cos * der_theta_z_12 / math.Pow10(4) * 2 * math.Pi,
 	}
 
 	force_k := TriTuple{
-		x: der_U_thate * der_that_cos * der_theta_x_32 / math.Pow10(4),
-		y: der_U_thate * der_that_cos * der_theta_y_32 / math.Pow10(4),
-		z: der_U_thate * der_that_cos * der_theta_z_32 / math.Pow10(4),
+		x: der_U_thate * der_that_cos * der_theta_x_32 / math.Pow10(4) * 2 * math.Pi,
+		y: der_U_thate * der_that_cos * der_theta_y_32 / math.Pow10(4) * 2 * math.Pi,
+		z: der_U_thate * der_that_cos * der_theta_z_32 / math.Pow10(4) * 2 * math.Pi,
 	}
 
 	force_j := TriTuple{
-		x: -force_i.x - force_k.x,
-		y: -force_i.y - force_k.y,
-		z: -force_i.z - force_k.z,
+		x: -force_i.x - force_k.x*2*math.Pi,
+		y: -force_i.y - force_k.y*2*math.Pi,
+		z: -force_i.z - force_k.z*2*math.Pi,
 	}
 
 	if math.IsNaN(force_i.x) || math.IsNaN(force_j.x) || math.IsNaN(force_k.x) {
@@ -967,27 +967,27 @@ func CalculateProperDihedralsForce(kd, phi, pn, phase float64, atom1, atom2, ato
 	der_cos_ux, der_cos_uy, der_cos_uz := CalculateDerivate(v_u, v_t, phi)
 
 	force_i := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) / math.Pow10(4),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) / math.Pow10(4),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) / math.Pow10(4),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector32.z) + der_cos_tz*vector32.y) / math.Pow10(4) * 2 * math.Pi,
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector32.x) + der_cos_tx*vector32.z) / math.Pow10(4) * 2 * math.Pi,
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector32.y) + der_cos_ty*vector32.x) / math.Pow10(4) * 2 * math.Pi,
 	}
 
 	force_j := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y)) / math.Pow10(4),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z)) / math.Pow10(4),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x)) / math.Pow10(4),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*(-vector12.z+vector32.z) + der_cos_tz*(-vector32.y+vector12.y) + der_cos_uy*(-vector43.z) + der_cos_uz*(vector43.y)) / math.Pow10(4) * 2 * math.Pi,
+		y: der_U_phi * der_phi_cos * (der_cos_tz*(-vector12.x+vector32.x) + der_cos_tx*(-vector32.z+vector12.z) + der_cos_uy*(vector43.z) + der_cos_uz*(-vector43.x)) / math.Pow10(4) * 2 * math.Pi,
+		z: der_U_phi * der_phi_cos * (der_cos_tx*(-vector12.y+vector32.y) + der_cos_ty*(-vector32.x+vector12.x) + der_cos_uy*(-vector43.y) + der_cos_uz*(vector43.x)) / math.Pow10(4) * 2 * math.Pi,
 	}
 
 	force_k := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) / math.Pow10(4),
-		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) / math.Pow10(4),
-		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) / math.Pow10(4),
+		x: der_U_phi * der_phi_cos * (der_cos_ty*vector12.z - der_cos_tz*vector12.y + der_cos_uy*(vector32.z+vector43.z) - der_cos_uz*(vector32.y+vector43.y)) / math.Pow10(4) * 2 * math.Pi,
+		y: der_U_phi * der_phi_cos * (der_cos_tz*vector12.x - der_cos_tx*vector12.z + der_cos_uz*(vector32.x+vector43.x) - der_cos_ux*(vector32.z+vector43.z)) / math.Pow10(4) * 2 * math.Pi,
+		z: der_U_phi * der_phi_cos * (der_cos_tx*vector12.y - der_cos_ty*vector12.z + der_cos_ux*(vector32.y+vector43.y) - der_cos_uy*(vector32.x+vector43.x)) / math.Pow10(4) * 2 * math.Pi,
 	}
 
 	force_l := TriTuple{
-		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) / math.Pow10(4),
-		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) / math.Pow10(4),
-		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) / math.Pow10(4),
+		x: der_U_phi * der_phi_cos * (der_cos_uy*(-vector32.z) + der_cos_uz*vector32.y) / math.Pow10(4) * 2 * math.Pi,
+		y: der_U_phi * der_phi_cos * (der_cos_uz*(-vector32.x) + der_cos_ux*vector32.z) / math.Pow10(4) * 2 * math.Pi,
+		z: der_U_phi * der_phi_cos * (der_cos_ux*(-vector32.y) + der_cos_uy*vector32.x) / math.Pow10(4) * 2 * math.Pi,
 	}
 
 	return force_i, force_j, force_k, force_l

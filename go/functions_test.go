@@ -1316,8 +1316,7 @@ func ReadOneProtein(filename string) (Protein, error) {
 	return protein, err
 }
 
-func ReadProteins(filename string) ([]Protein, error) {
-	var proteins []Protein
+func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
 		return math.NaN(), nil, err
