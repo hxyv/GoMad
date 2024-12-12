@@ -285,6 +285,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 											if math.IsNaN(theta) {
 												continue
 											}
+											if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 {
+												continue
+											}
 											parameterList := []float64{119.200, 418.400}
 											if len(parameterList) != 1 {
 
@@ -354,6 +357,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									if math.IsNaN(theta) {
 										continue
 									}
+									if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 {
+										continue
+									}
 									parameterList := SearchParameter(3, angleParameter, atom1, atom2, atom3)
 									if len(parameterList) != 1 {
 
@@ -408,6 +414,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 										theta := CalculateAngle(atom1, atom2, atom3)
 
 										if math.IsNaN(theta) {
+											continue
+										}
+										if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 {
 											continue
 										}
 										parameterList := []float64{120.900, 669.440}
@@ -480,6 +489,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 								atom4 := p.Residue[w].Atoms[j+1]
 								phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
 								if math.IsNaN(phi) {
+									continue
+								}
+								if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 || Distance(atom3.position, atom4.position) > 2 {
 									continue
 								}
 								parameterList := []float64{180.0, 6.06680, 2}
@@ -567,6 +579,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 							if math.IsNaN(dihedralEnergy) {
 								continue
 							}
+							if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 || Distance(atom3.position, atom4.position) > 2 {
+								continue
+							}
 							_, exist := forceMap[i+index-len(residue.Atoms)]
 							if exist {
 								forceMap[i+index-len(residue.Atoms)].x += force_i.x
@@ -633,6 +648,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 											atom4 := residue.Atoms[l]
 											phi := CalculateDihedralAngle(atom1, atom2, atom3, atom4)
 											if math.IsNaN(phi) {
+												continue
+											}
+											if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 || Distance(atom3.position, atom4.position) > 2 {
 												continue
 											}
 											parameterList := SearchParameter(4, dihedralParameter, atom1, atom2, atom3, atom4)
@@ -708,6 +726,9 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 
 											dihedralEnergy += CalculateProperDihedralAngleEnergy(parameterList[1], phi, parameterList[2], parameterList[0])
 											if math.IsNaN(dihedralEnergy) {
+												continue
+											}
+											if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 || Distance(atom3.position, atom4.position) > 2 {
 												continue
 											}
 											_, exist := forceMap[i+index]
