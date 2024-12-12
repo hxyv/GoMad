@@ -154,7 +154,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 		// range over each bond
 
 		for _, bondPairs := range residueParameterBondValue[residue.Name].bonds {
-			//fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
+			fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
 
@@ -163,7 +163,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
-
+							fmt.Println(atom1.element, atom2.element)
 							r := Distance(atom1.position, atom2.position)
 							if r == 0 {
 								continue
@@ -171,13 +171,13 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 							if len(parameterList) != 1 {
-
+								fmt.Println(atom1.element, atom2.element)
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 								if math.IsNaN(force.x) {
 									continue
 								}
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
-								fmt.Println(bondEnergy)
+								// fmt.Println(bondEnergy)
 								_, exist := forceMap[i+index]
 								if exist {
 									forceMap[i+index].x += force.x

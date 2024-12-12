@@ -1319,24 +1319,31 @@ func ReadOneProtein(filename string) (Protein, error) {
 func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error) {
 	lines, err := readFileline(filename)
 	if err != nil {
-		return math.NaN(), nil, err
+		return proteins, err
 	}
 
-	var energy float64
-	var Map map[int]*TriTuple
-	for i := range lines {
-		line := strings.Split(lines[i], " ")
-		energy, _ = strconv.ParseFloat(line[0], 64)
-		key, _ := strconv.Atoi(line[1])
-		var value TriTuple
-		value.x, _ = strconv.ParseFloat(line[2], 64)
-		value.y, _ = strconv.ParseFloat(line[3], 64)
-		value.z, _ = strconv.ParseFloat(line[4], 64)
-		Map[key] = &value
+	i := 0
+	for i < len(lines) {
+		// Check if the current line starts a new protein
+		if strings.HasPrefix(lines[i], "Protein") {
+			firstLine := strings.Split(lines[i], " ")
+			protein := Protein{Name: firstLine[0]}
+			residueLen, _ := strconv.Atoi(firstLine[1])
+			i++ // Move to the first residue line
+			for j := 0; j < residueLen; j++ {
+				line := strings.Split(lines[i], " ")
+				AtomLen, _ := strconv.Atoi(line[3])
+				residue := ReadOneResidue(lines[i : i+AtomLen+1])
+				protein.Residue = append(protein.Residue, &residue)
+				i += AtomLen + 1
+			}
+			proteins = append(proteins, protein)
+		} else {
+			i++ // Skip any unrelated lines
+		}
 	}
-	return energy, Map, nil
+	return proteins, nil
 }
-
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory
 	files, err := os.ReadDir(dir)
@@ -1410,4 +1417,24 @@ func ReadTriTuples(filename string) ([]TriTuple, error) {
 		triTuples = append(triTuples, triTuple)
 	}
 	return triTuples, nil
+}
+
+func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error) {
+	lines, err := readFileline(filename)
+	if err != nil {
+		return math.NaN(), nil, err
+	}
+	var energy float64
+	var Map map[int]*TriTuple
+	for i := range lines {
+		line := strings.Split(lines[i], " ")
+		energy, _ = strconv.ParseFloat(line[0], 64)
+		key, _ := strconv.Atoi(line[1])
+		var value TriTuple
+		value.x, _ = strconv.ParseFloat(line[2], 64)
+		value.y, _ = strconv.ParseFloat(line[3], 64)
+		value.z, _ = strconv.ParseFloat(line[4], 64)
+		Map[key] = &value
+	}
+	return energy, Map, nil
 }
