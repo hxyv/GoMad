@@ -77,7 +77,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 	fmt.Println("bondedEnergy is:", bondedEnergy)
 	fmt.Println("unbondedEnergy is:", unbondedEnergy)
 	// Combine energies
-	totalEnergy := bondedEnergy + unbondedEnergy
+	totalEnergy := bondedEnergy //+ unbondedEnergy
 	// Create a total force map
 	totalForceMap := make(map[int]*TriTuple)
 	for index, force := range bondedForceMap {
@@ -154,7 +154,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 		// range over each bond
 
 		for _, bondPairs := range residueParameterBondValue[residue.Name].bonds {
-			//fmt.Println("The pair:", bondPairs.atoms[0], bondPairs.atoms[1])
+
 			for i := 0; i < len(residue.Atoms)-1; i++ {
 				atom1 := residue.Atoms[i]
 
@@ -169,7 +169,11 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 								continue
 							}
 
+							if r > 2 {
+								continue
+							}
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
+
 							if len(parameterList) != 1 {
 
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
@@ -177,29 +181,29 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									continue
 								}
 								bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
-								fmt.Println(bondEnergy)
-								_, exist := forceMap[i+index]
+
+								_, exist := forceMap[atom1.index]
 								if exist {
-									forceMap[i+index].x += force.x
-									forceMap[i+index].y += force.y
-									forceMap[i+index].z += force.z
+									forceMap[atom1.index].x += force.x
+									forceMap[atom1.index].y += force.y
+									forceMap[atom1.index].z += force.z
 								} else {
-									forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-									forceMap[i+index].x = force.x
-									forceMap[i+index].y = force.y
-									forceMap[i+index].z = force.z
+									forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+									forceMap[atom1.index].x = force.x
+									forceMap[atom1.index].y = force.y
+									forceMap[atom1.index].z = force.z
 								}
 
-								_, exist1 := forceMap[j+index]
+								_, exist1 := forceMap[atom2.index]
 								if exist1 {
-									forceMap[j+index].x += -force.x
-									forceMap[j+index].y += -force.y
-									forceMap[j+index].z += -force.z
+									forceMap[atom2.index].x += -force.x
+									forceMap[atom2.index].y += -force.y
+									forceMap[atom2.index].z += -force.z
 								} else {
-									forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-									forceMap[j+index].x = -force.x
-									forceMap[j+index].y = -force.y
-									forceMap[j+index].z = -force.z
+									forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+									forceMap[atom2.index].x = -force.x
+									forceMap[atom2.index].y = -force.y
+									forceMap[atom2.index].z = -force.z
 								}
 
 							}
@@ -216,10 +220,10 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 								if r == 0 {
 									continue
 								}
+
 								if r > 2 {
 									continue
 								}
-
 								parameterList := []float64{0.13830, 354803.2}
 								if len(parameterList) != 1 {
 
@@ -229,28 +233,28 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									}
 									bondEnergy += CalculateBondStretchEnergy(parameterList[1], r, parameterList[0])
 
-									_, exist := forceMap[i+index]
+									_, exist := forceMap[atom1.index]
 									if exist {
-										forceMap[i+index].x += force.x
-										forceMap[i+index].y += force.y
-										forceMap[i+index].z += force.z
+										forceMap[atom1.index].x += force.x
+										forceMap[atom1.index].y += force.y
+										forceMap[atom1.index].z += force.z
 									} else {
-										forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[i+index].x = force.x
-										forceMap[i+index].y = force.y
-										forceMap[i+index].z = force.z
+										forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[atom1.index].x = force.x
+										forceMap[atom1.index].y = force.y
+										forceMap[atom1.index].z = force.z
 									}
 
-									_, exist1 := forceMap[k+index+len(residue.Atoms)]
+									_, exist1 := forceMap[atom2.index]
 									if exist1 {
-										forceMap[k+index+len(residue.Atoms)].x += -force.x
-										forceMap[k+index+len(residue.Atoms)].y += -force.y
-										forceMap[k+index+len(residue.Atoms)].z += -force.z
+										forceMap[atom2.index].x += -force.x
+										forceMap[atom2.index].y += -force.y
+										forceMap[atom2.index].z += -force.z
 									} else {
-										forceMap[k+index+len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[k+index+len(residue.Atoms)].x = -force.x
-										forceMap[k+index+len(residue.Atoms)].y = -force.y
-										forceMap[k+index+len(residue.Atoms)].z = -force.z
+										forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[atom2.index].x = -force.x
+										forceMap[atom2.index].y = -force.y
+										forceMap[atom2.index].z = -force.z
 									}
 
 								}
@@ -764,8 +768,10 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 					}
 				}
 			}
+
 		}
 		index += len(residue.Atoms)
+
 	}
 
 	totalEnergy := bondEnergy + angleEnergy + dihedralEnergy
@@ -923,9 +929,9 @@ func CalculateAngleForce(k, theta, theta_0 float64, atom1, atom2, atom3 *Atom) (
 	}
 
 	force_j := TriTuple{
-		x: -force_i.x - force_k.x*2*math.Pi,
-		y: -force_i.y - force_k.y*2*math.Pi,
-		z: -force_i.z - force_k.z*2*math.Pi,
+		x: (-force_i.x - force_k.x) * 2 * math.Pi,
+		y: (-force_i.y - force_k.y) * 2 * math.Pi,
+		z: (-force_i.z - force_k.z) * 2 * math.Pi,
 	}
 
 	if math.IsNaN(force_i.x) || math.IsNaN(force_j.x) || math.IsNaN(force_k.x) {

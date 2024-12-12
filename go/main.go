@@ -22,7 +22,7 @@ func main() {
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
 	// Check if the assigned charges are correct
-	// CheckAssignedCharges(&protein, chargeData)
+	CheckAssignedCharges(&protein, chargeData)
 
 	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
@@ -40,11 +40,13 @@ func main() {
 	Check(error)
 
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
 	timepoints := SimulateMD(*initialProtein, time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 	RMSD := CalculateRMSD(timepoints)
 	TemporaryPlot(RMSD, time)
 	writeRMSD(RMSD)
 	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
+
 }
 
 func Check(err error) {
