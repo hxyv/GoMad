@@ -30,3 +30,7 @@ go.work.sum
 # Output file
 output.pdb
 scatter.png
+
+# R project
+.RData
+.Rhistory
