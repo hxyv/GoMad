@@ -3,7 +3,6 @@ package main
 const f = 138.935458 // electric conversion factor
 
 const verletCutOff = 10.0
-const verletBuffer = 0.0
 
 type TriTuple struct {
 	x float64

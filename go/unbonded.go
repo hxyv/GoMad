@@ -24,16 +24,14 @@ func CalculateLJPotentialEnergy(B, A, r float64) float64 {
 	return LJ
 }
 
-func NewVerletList() *VerletList {
+func NewNeighborList() *VerletList {
 	return &VerletList{
 		Neighbors: make(map[*Atom][]*Atom),
 		Cutoff:    verletCutOff,
-		Buffer:    verletBuffer,
 	}
 }
 
-func (v *VerletList) BuildVerlet(protein *Protein) {
-	cutoffPlusBuffer := v.Cutoff + v.Buffer
+func (v *VerletList) BuildNeighbor(protein *Protein) {
 	v.Neighbors = make(map[*Atom][]*Atom)
 
 	for _, residue := range protein.Residue {
@@ -49,7 +47,7 @@ func (v *VerletList) BuildVerlet(protein *Protein) {
 						continue
 					}
 					distance := Distance(atom.position, otherAtom.position)
-					if distance <= cutoffPlusBuffer && distance > 2.0 {
+					if distance <= v.Cutoff && distance > 2.0 {
 						v.Neighbors[atom] = append(v.Neighbors[atom], otherAtom)
 					}
 				}
@@ -87,8 +85,8 @@ func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]
 func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	forceMap := make(map[int]*TriTuple)
 	totalEnergy := 0.0
-	verletList := NewVerletList()
-	verletList.BuildVerlet(p)
+	verletList := NewNeighborList()
+	verletList.BuildNeighbor(p)
 
 	for _, residue := range p.Residue {
 		for _, atom1 := range residue.Atoms {
