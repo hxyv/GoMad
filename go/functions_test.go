@@ -1,3 +1,4 @@
+// This file contains all the functions tests
 package main
 
 import (
@@ -40,8 +41,10 @@ type UpdateVelocityTest = struct {
 // //////////
 // Test area
 // //////////
+
+// Test UpdateAcceleration
 func TestUpdateAcceleration(t *testing.T) {
-	// Read in all tests from the Tests/Distance directory and run them
+	// Read in all tests from the Tests/UpdateAcceleration directory and run them
 	tests := ReadUpdateAccelerationTests("Tests/UpdateAcceleration/")
 	for _, test := range tests {
 		// Run the test
@@ -53,8 +56,9 @@ func TestUpdateAcceleration(t *testing.T) {
 	}
 }
 
+// Test UpdatePosition
 func TestUpdatePosition(t *testing.T) {
-	// Read in all tests from the Tests/Distance directory and run them
+	// Read in all tests from the Tests/UpdatePosition directory and run them
 	tests := ReadUpdatePositionTests("Tests/UpdatePosition/")
 	for _, test := range tests {
 		// Run the test
@@ -66,8 +70,9 @@ func TestUpdatePosition(t *testing.T) {
 	}
 }
 
+// Test UpdateVelocity
 func TestUpdateVelocity(t *testing.T) {
-	// Read in all tests from the Tests/Distance directory and run them
+	// Read in all tests from the Tests/UpdateVelocity directory and run them
 	tests := ReadUpdatePositionTests("Tests/UpdateVelocity/")
 	for _, test := range tests {
 		// Run the test
@@ -79,7 +84,9 @@ func TestUpdateVelocity(t *testing.T) {
 	}
 }
 
+// Test CalculateVector
 func TestCalculateVector(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CalculateVector" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateVector" + "/output")
 
@@ -105,6 +112,7 @@ func TestCalculateVector(t *testing.T) {
 		realResult.y = convertStringToFloatSlice(out[0])[1]
 		realResult.z = convertStringToFloatSlice(out[0])[2]
 
+		// compare
 		if realResult != result {
 			t.Errorf("CalculateVector() = %v, want %v", result, realResult)
 		}
@@ -112,7 +120,9 @@ func TestCalculateVector(t *testing.T) {
 	}
 }
 
+// Test CopyTriTuple
 func TestCopyTriTuple(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CopyTriTuple" + "/input")
 	outputFiles := ReadDirectory("Tests/CopyTriTuple" + "/output")
 
@@ -134,6 +144,7 @@ func TestCopyTriTuple(t *testing.T) {
 		realResult.y = convertStringToFloatSlice(out[0])[1]
 		realResult.z = convertStringToFloatSlice(out[0])[2]
 
+		// compare
 		if realResult != result {
 			t.Errorf("TriTuple() = %v, want %v", result, realResult)
 		}
@@ -141,7 +152,9 @@ func TestCopyTriTuple(t *testing.T) {
 	}
 }
 
+// Test CopyAtom
 func TestCopyAtom(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CopyAtom" + "/input")
 	outputFiles := ReadDirectory("Tests/CopyAtom" + "/output")
 
@@ -157,6 +170,7 @@ func TestCopyAtom(t *testing.T) {
 		atomlist1, _ := ReadAtoms("Tests/CopyAtom/" + "output/" + outputFiles[i].Name())
 		realResult := atomlist1[0]
 
+		// compare
 		if realResult != *result {
 			t.Errorf("CopyAtom() = %v, want %v", result, realResult)
 		}
@@ -164,6 +178,7 @@ func TestCopyAtom(t *testing.T) {
 	}
 }
 
+// Test CopyResidue
 func TestCopyResidue(t *testing.T) {
 	inputFiles := ReadDirectory("Tests/CopyResidue" + "/input")
 	outputFiles := ReadDirectory("Tests/CopyResidue" + "/output")
@@ -199,7 +214,9 @@ func TestCopyResidue(t *testing.T) {
 	}
 }
 
+// Test CopyProtein
 func TestCopyProtein(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CopyProtein" + "/input")
 	outputFiles := ReadDirectory("Tests/CopyProtein" + "/output")
 
@@ -239,7 +256,9 @@ func TestCopyProtein(t *testing.T) {
 	}
 }
 
+// Test Cross
 func TestCross(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/Cross" + "/input")
 	outputFiles := ReadDirectory("Tests/Cross" + "/output")
 
@@ -265,6 +284,7 @@ func TestCross(t *testing.T) {
 		realResult.y = convertStringToFloatSlice(out[0])[1]
 		realResult.z = convertStringToFloatSlice(out[0])[2]
 
+		// compare
 		if realResult != result {
 			t.Errorf("Cross() = %v, want %v", result, realResult)
 		}
@@ -272,7 +292,9 @@ func TestCross(t *testing.T) {
 	}
 }
 
+// Test CalculateDerivate
 func TestCalculateDerivate(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CalculateDerivate" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateDerivate" + "/output")
 
@@ -290,6 +312,7 @@ func TestCalculateDerivate(t *testing.T) {
 		v2.z = convertStringToFloatSlice(pair[1])[2]
 
 		phi := convertStringToFloatSlice(pair[0])[0]
+
 		// function
 		der1, der2, der3 := CalculateDerivate(v1, v2, phi)
 		der1 = math.Round(der1*math.Pow10(4)) / math.Pow10(4)
@@ -302,6 +325,7 @@ func TestCalculateDerivate(t *testing.T) {
 		result2 := convertStringToFloatSlice(out[0])[1]
 		result3 := convertStringToFloatSlice(out[0])[2]
 
+		// compare
 		if der1 != result1 || der2 != result2 || der3 != result3 {
 			t.Errorf("CalculateDerivate() = %v, %v, %v, want (%v, %v, %v)", der1, der2, der3, result1, result2, result3)
 		}
@@ -309,7 +333,9 @@ func TestCalculateDerivate(t *testing.T) {
 	}
 }
 
+// Test Magnitude
 func TestMagnitude(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/magnitude" + "/input")
 	outputFiles := ReadDirectory("Tests/magnitude" + "/output")
 
@@ -329,6 +355,7 @@ func TestMagnitude(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != result {
 			t.Errorf("magnitude() = %v, want %v", result, realResult)
 		}
@@ -336,7 +363,9 @@ func TestMagnitude(t *testing.T) {
 	}
 }
 
+// Test Dot
 func TestDot(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/Dot" + "/input")
 	outputFiles := ReadDirectory("Tests/Dot" + "/output")
 
@@ -361,6 +390,7 @@ func TestDot(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != result {
 			t.Errorf("Dot() = %v, want %v", result, realResult)
 		}
@@ -368,7 +398,9 @@ func TestDot(t *testing.T) {
 	}
 }
 
+// Test BuildNormalVector
 func TestBuildNormalVector(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/BuildNormalVector" + "/input")
 	outputFiles := ReadDirectory("Tests/BuildNormalVector" + "/output")
 
@@ -394,6 +426,7 @@ func TestBuildNormalVector(t *testing.T) {
 		realResult.y = convertStringToFloatSlice(out[0])[1]
 		realResult.z = convertStringToFloatSlice(out[0])[2]
 
+		// compare
 		if realResult != result {
 			t.Errorf("BuildNormalVector() = %v, want %v", result, realResult)
 		}
@@ -401,7 +434,9 @@ func TestBuildNormalVector(t *testing.T) {
 	}
 }
 
+// Test CalculateAngle
 func TestCalculateAngle(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CalculateAngle" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateAngle" + "/output")
 
@@ -430,6 +465,7 @@ func TestCalculateAngle(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != math.Round(result) {
 			t.Errorf("CalculateAngle() = %v, want %v", result, realResult)
 		}
@@ -437,7 +473,9 @@ func TestCalculateAngle(t *testing.T) {
 	}
 }
 
+// Test CalculateDihedralAngle
 func TestCalculateDihedralAngle(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CalculateDihedralAngle" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateDihedralAngle" + "/output")
 
@@ -471,6 +509,7 @@ func TestCalculateDihedralAngle(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != math.Round(result) {
 			t.Errorf("CalculateDihedralAngle() = %v, want %v", result, realResult)
 		}
@@ -478,7 +517,9 @@ func TestCalculateDihedralAngle(t *testing.T) {
 	}
 }
 
+// Test CalculateBondStretchEnergy
 func TestCalculateBondStretchEnergy(t *testing.T) {
+	// input and output files
 	inputFiles := ReadDirectory("Tests/CalculateBondStretchEnergy" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateBondStretchEnergy" + "/output")
 
@@ -498,6 +539,7 @@ func TestCalculateBondStretchEnergy(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != math.Round(result) {
 			t.Errorf("CalculateBondStretchEnergy() = %v, want %v", result, realResult)
 		}
@@ -505,7 +547,9 @@ func TestCalculateBondStretchEnergy(t *testing.T) {
 	}
 }
 
+// Test AnglePotentialEnergy
 func TestCalculateAnglePotentialEnergy(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CalculateAnglePotentialEnergy" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateAnglePotentialEnergy" + "/output")
 
@@ -525,6 +569,7 @@ func TestCalculateAnglePotentialEnergy(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult*math.Pi*math.Pi != result {
 			t.Errorf("CalculateAnglePotentialEnergy() = %v, want %v", result, realResult)
 		}
@@ -532,7 +577,9 @@ func TestCalculateAnglePotentialEnergy(t *testing.T) {
 	}
 }
 
+// Test CalculateProperDihedralAngleEnergy
 func TestCalculateProperDihedralAngleEnergy(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CalculateProperDihedralAngleEnergy" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateProperDihedralAngleEnergy" + "/output")
 
@@ -553,6 +600,7 @@ func TestCalculateProperDihedralAngleEnergy(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != result {
 			t.Errorf("CalculateProperDihedralAngleEnergy() = %v, want %v", result, realResult)
 		}
@@ -560,7 +608,9 @@ func TestCalculateProperDihedralAngleEnergy(t *testing.T) {
 	}
 }
 
+// Test CalculateBondForce
 func TestCalculateBondForce(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CalculateBondForce" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateBondForce" + "/output")
 
@@ -590,6 +640,7 @@ func TestCalculateBondForce(t *testing.T) {
 		realResult.y = math.Round(convertStringToFloatSlice(out[0])[1] * math.Pow10(4))
 		realResult.z = math.Round(convertStringToFloatSlice(out[0])[2] * math.Pow10(4))
 
+		// compare
 		if realResult.x != math.Round(result.x*math.Pow10(4)) || realResult.y != math.Round(result.y*math.Pow10(4)) || realResult.z != math.Round(result.z*math.Pow10(4)) {
 			t.Errorf("CalculateBondForce() = %v(%v ,%v, %v), want %v", result, math.Round(result.x*math.Pow10(4)), math.Round(result.y*math.Pow10(4)), math.Round(result.z*math.Pow10(4)), realResult)
 		}
@@ -597,7 +648,9 @@ func TestCalculateBondForce(t *testing.T) {
 	}
 }
 
+// Test CalculateAngleForce
 func TestCalculateAngleForce(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CalculateAngleForce" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateAngleForce" + "/output")
 
@@ -650,6 +703,7 @@ func TestCalculateAngleForce(t *testing.T) {
 		realResult3.y = convertStringToFloatSlice(out[2])[1]
 		realResult3.z = convertStringToFloatSlice(out[2])[2]
 
+		// compare
 		if result1 != realResult1 || result2 != realResult2 || result3 != realResult3 {
 			t.Errorf("CalculateAngleForce() = (%v ,%v, %v), want (%v, %v, %v)", result1, result2, result3, realResult1, realResult2, realResult3)
 		}
@@ -657,7 +711,9 @@ func TestCalculateAngleForce(t *testing.T) {
 	}
 }
 
+// Test DerivateAnglePositionX
 func TestDerivateAnglePositionX(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/DerivateAnglePositionX" + "/input")
 	outputFiles := ReadDirectory("Tests/DerivateAnglePositionX" + "/output")
 
@@ -688,6 +744,7 @@ func TestDerivateAnglePositionX(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != result {
 			t.Errorf("DerivateAnglePositionX() = %v, want %v", result, realResult)
 		}
@@ -695,7 +752,9 @@ func TestDerivateAnglePositionX(t *testing.T) {
 	}
 }
 
+// Test DerivateAnglePositionY
 func TestDerivateAnglePositionY(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/DerivateAnglePositionY" + "/input")
 	outputFiles := ReadDirectory("Tests/DerivateAnglePositionY" + "/output")
 
@@ -726,6 +785,7 @@ func TestDerivateAnglePositionY(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != result {
 			t.Errorf("DerivateAnglePositionY() = %v, want %v", result, realResult)
 		}
@@ -733,7 +793,9 @@ func TestDerivateAnglePositionY(t *testing.T) {
 	}
 }
 
+// Test DerivateAnglePositionZ
 func TestDerivateAnglePositionZ(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/DerivateAnglePositionZ" + "/input")
 	outputFiles := ReadDirectory("Tests/DerivateAnglePositionZ" + "/output")
 
@@ -764,6 +826,7 @@ func TestDerivateAnglePositionZ(t *testing.T) {
 		var realResult float64
 		realResult = convertStringToFloatSlice(out[0])[0]
 
+		// compare
 		if realResult != result {
 			t.Errorf("DerivateAnglePositionZ() = %v, want %v", result, realResult)
 		}
@@ -771,7 +834,9 @@ func TestDerivateAnglePositionZ(t *testing.T) {
 	}
 }
 
+// Test CalculateProperDihedralsForce
 func TestCalculateProperDihedralsForce(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CalculateProperDihedralsForce" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateProperDihedralsForce" + "/output")
 
@@ -839,6 +904,7 @@ func TestCalculateProperDihedralsForce(t *testing.T) {
 		realResult4.y = convertStringToFloatSlice(out[3])[1]
 		realResult4.z = convertStringToFloatSlice(out[3])[2]
 
+		// compare
 		if result1 != realResult1 || result2 != realResult2 || result3 != realResult3 || result4 != realResult4 {
 			t.Errorf("CalculateProperDihedralsForce() = (%v ,%v, %v, %v), want (%v, %v, %v, %v)", result1, result2, result3, result4, realResult1, realResult2, realResult3, realResult4)
 		}
@@ -846,7 +912,9 @@ func TestCalculateProperDihedralsForce(t *testing.T) {
 	}
 }
 
+// Test SearchParameter
 func TestSearchParameter(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/SearchParameter" + "/input")
 	outputFiles := ReadDirectory("Tests/SearchParameter" + "/output")
 
@@ -883,7 +951,9 @@ func TestSearchParameter(t *testing.T) {
 
 }
 
+// Test CalculateTotalEnergyForce
 func TestCalculateTotalEnergyForce(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CalculateTotalEnergyForce" + "/input")
 	outputFiles := ReadDirectory("Tests/CalculateTotalEnergyForce" + "/output")
 
@@ -931,7 +1001,9 @@ func TestCalculateTotalEnergyForce(t *testing.T) {
 	}
 }
 
+// Test CombineEnergyAndForce
 func TestCombineEnergyAndForce(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/CombineEnergyAndForce" + "/input")
 	outputFiles := ReadDirectory("Tests/CombineEnergyAndForce" + "/output")
 
@@ -979,7 +1051,9 @@ func TestCombineEnergyAndForce(t *testing.T) {
 	}
 }
 
+// Test SteepestDescent
 func TestSteepestDescent(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/SteepestDescent" + "/input")
 	outputFiles := ReadDirectory("Tests/SteepestDescent" + "/output")
 	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
@@ -1035,7 +1109,9 @@ func TestSteepestDescent(t *testing.T) {
 
 }
 
+// Test PerformEnergyMinimization
 func TestPerformEnergyMinimization(t *testing.T) {
+	// input and outputfiles
 	inputFiles := ReadDirectory("Tests/PerformEnergyMinimization" + "/input")
 	outputFiles := ReadDirectory("Tests/PerformEnergyMinimization" + "/output")
 
@@ -1216,12 +1292,15 @@ func ReadUpdateVelocityTests(directory string) []UpdateVelocityTest {
 	return tests
 }
 
+// read atoms in the file
 func ReadAtoms(filename string) ([]Atom, error) {
+	// read lines
 	lines, err := readFileline(filename)
 	if err != nil {
 		return nil, err
 	}
 
+	// read atom in each line
 	var atoms []Atom
 	for _, line := range lines {
 		// Convert the line to a slice of float64
@@ -1236,6 +1315,7 @@ func ReadAtoms(filename string) ([]Atom, error) {
 	return atoms, nil
 }
 
+// read one atom in a line
 func ReadOneAtom(line []string) Atom {
 	var atom Atom
 	atom.index, _ = strconv.Atoi(line[0])
@@ -1258,9 +1338,12 @@ func ReadOneAtom(line []string) Atom {
 	return atom
 }
 
+// read a residue in some lines
 func ReadOneResidue(lines []string) Residue {
 	var residue Residue
 	var atoms []*Atom
+
+	// read fields except atoms
 	for i, _ := range lines {
 		line := strings.Split(lines[i], " ")
 		if i == 0 {
@@ -1271,6 +1354,7 @@ func ReadOneResidue(lines []string) Residue {
 			continue
 		}
 
+		// read atoms
 		atom := ReadOneAtom(line)
 		atoms = append(atoms, &atom)
 
@@ -1279,7 +1363,9 @@ func ReadOneResidue(lines []string) Residue {
 	return residue
 }
 
+// read residues in one file
 func ReadResidues(filename string) ([]Residue, error) {
+	// read lines
 	lines, err := readFileline(filename)
 	if err != nil {
 		return nil, err
@@ -1298,20 +1384,25 @@ func ReadResidues(filename string) ([]Residue, error) {
 	return residues, err
 }
 
+// read one protein
 func ReadOneProtein(filename string) (Protein, error) {
 	var protein Protein
+	// read lines in the file
 	lines, err := readFileline(filename)
 	if err != nil {
 		return protein, err
 	}
 
+	// read protein name
 	firstLine := strings.Split(lines[0], " ")
 	protein.Name = firstLine[0]
 	residueLen, _ := strconv.Atoi(firstLine[1])
 	startIndex := 1
+	// read residues
 	for j := 0; j < residueLen; j++ {
 		line := strings.Split(lines[startIndex], " ")
 		AtomLen, _ := strconv.Atoi(line[3])
+		// read one residue in a line
 		residue := ReadOneResidue(lines[startIndex : startIndex+AtomLen+1])
 		protein.Residue = append(protein.Residue, &residue)
 		startIndex += AtomLen + 1
@@ -1320,8 +1411,10 @@ func ReadOneProtein(filename string) (Protein, error) {
 	return protein, err
 }
 
+// read proteins
 func ReadProteins(filename string) ([]Protein, error) {
 	var proteins []Protein
+	// read lines
 	lines, err := readFileline(filename)
 	if err != nil {
 		return proteins, err
@@ -1349,6 +1442,8 @@ func ReadProteins(filename string) ([]Protein, error) {
 	}
 	return proteins, nil
 }
+
+// read directory
 func ReadDirectory(dir string) []fs.DirEntry {
 	//read in all files in the given directory
 	files, err := os.ReadDir(dir)
@@ -1424,7 +1519,9 @@ func ReadTriTuples(filename string) ([]TriTuple, error) {
 	return triTuples, nil
 }
 
+// read a float and a map containing pointers of TriTuple with int as key
 func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error) {
+	// read lines
 	lines, err := readFileline(filename)
 	if err != nil {
 		return math.NaN(), nil, err
@@ -1433,10 +1530,10 @@ func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error
 	Map := make(map[int]*TriTuple)
 	for i := range lines {
 		line := strings.Split(lines[i], " ")
-		if len(line) == 1 {
+		if len(line) == 1 { // read float64
 			energy, _ = strconv.ParseFloat(line[0], 64)
 		}
-		if len(line) == 4 {
+		if len(line) == 4 { // read TriTuple
 			key, _ := strconv.Atoi(line[0])
 			var value TriTuple
 			value.x, _ = strconv.ParseFloat(line[1], 64)

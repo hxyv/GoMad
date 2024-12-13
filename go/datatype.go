@@ -1,3 +1,4 @@
+// This file contains all the data types
 package main
 
 const f = 138.935458 // electric conversion factor

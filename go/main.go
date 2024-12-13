@@ -1,3 +1,4 @@
+// The main file which performs the model
 package main
 
 import (

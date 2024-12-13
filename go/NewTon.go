@@ -1,3 +1,4 @@
+// This file contains all the functions related to NewTon equation
 package main
 
 import (
@@ -5,21 +6,22 @@ import (
 	"math"
 )
 
-// SimulateGravity
-// Input: an initial Universe object, a number of generations, and a float time.
-// Output: a slice of numGens + 1 Universes resulting from simulating gravity over numGens generations, where the time interval between generations is specified by time.
+// SimulateMD
+// Input: an initial Protein object, related parameter dataset, and a float time.
+// Output: a slice of Protein resulting from MD simulation, where the time interval between generations is specified by time.
 func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
 	timePoints := make([]Protein, 0)
-	cerition := 100000000000.0
+	cerition := 10000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
 	iteration := 100 // 100
-	CheckPosition(timePoints[0])
-	fmt.Println("after first check")
+
+	// range over each iteration
 	for i := 0; i < iteration; i++ {
 		newProtein, _ := UpdateProtein(timePoints[len(timePoints)-1], time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter)
 		timePoints = append(timePoints, newProtein)
-		CheckPosition(timePoints[len(timePoints)-1])
+
+		// cerition of limited time
 		totalTime += time
 		if totalTime > cerition {
 			break
@@ -30,9 +32,9 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue,
 	return timePoints
 }
 
-// UpdateUniverse
-// Input: a Universe object and a float time.
-// Output: a Universe object resulting from a single step according to the gravity simulation, using a time interval specified by time.
+// UpdateProtein
+// Input: a Protein object, related parameter dataset and a float time.
+// Output: a Protein object resulting from a single step according to bonded and unbonded interaction, using a time interval specified by time.
 func UpdateProtein(currentProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) (Protein, float64) {
 	newProtein := CopyProtein(&currentProtein)
 
@@ -40,7 +42,7 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterBondVal
 
 	forceIndex := 1
 
-	// range and update every body in universe
+	// range and update every atom in the protein
 	for i, b := range newProtein.Residue {
 		for j, a := range b.Atoms {
 			_, exist := forceMap[forceIndex]
@@ -57,15 +59,12 @@ func UpdateProtein(currentProtein Protein, time float64, residueParameterBondVal
 		}
 
 	}
-
-	//AddSimpleBondConstraints(newProtein, bondParameter, residueParameterValue)
-
 	return *newProtein, energy
 }
 
 // UpdateVelocity
-// Input: Body object b, previous acceleration and velocity as OrderedPair objects, and a float time.
-// Output: Updated velocity vector of b as an OrderedPair according to physics nerd velocity update equations.
+// Input: a pointer of Atom object a, previous acceleration and velocity as TriTuple objects, and a float time.
+// Output: Updated velocity vector of a as an TriTuple according to physics nerd velocity update equations.
 func UpdateVelocity(a *Atom, oldAcceleration TriTuple, time float64) TriTuple {
 	var currentVelocity TriTuple // starts at (0, 0)
 
@@ -78,8 +77,8 @@ func UpdateVelocity(a *Atom, oldAcceleration TriTuple, time float64) TriTuple {
 }
 
 // UpdatePosition
-// Input: Body object b, previous acceleration and velocity as OrderedPair objects, and a float time.
-// Output: Updated position of b as an OrderedPair according to physics nerd update equations.
+// Input: a pointer of Atom object a, previous acceleration and velocity as OTriTuple objects, and a float time.
+// Output: Updated position of a as an TriTuple according to physics nerd update equations.
 func UpdatePosition(a *Atom, oldAcceleration, oldVelocity TriTuple, time float64) TriTuple {
 	var pos TriTuple
 
@@ -91,8 +90,8 @@ func UpdatePosition(a *Atom, oldAcceleration, oldVelocity TriTuple, time float64
 }
 
 // UpdateAcceleration
-// Input: currentUniverse Universe object and a Body object b.
-// Output: The acceleration of b in the next generation after computing the net force of gravity acting on b over all bodies in currentUniverse.
+// Input: a pointer of Atom object and a force in TriTuple.
+// Output: The acceleration of a in the next generation after computing the net force acting on a from all the interactions.
 func UpdateAcceleration(force *TriTuple, a *Atom) TriTuple {
 	var accel TriTuple
 
@@ -104,6 +103,9 @@ func UpdateAcceleration(force *TriTuple, a *Atom) TriTuple {
 	return accel
 }
 
+// calculate RMSD in each timepoint
+// Input: a series of Protein
+// Output: a list of RMSD
 func CalculateRMSD(timePoints []Protein) []float64 {
 	var RMSDValue []float64
 
@@ -119,21 +121,8 @@ func CalculateRMSD(timePoints []Protein) []float64 {
 			}
 		}
 		RMSDValue = append(RMSDValue, math.Sqrt(value/length))
-		//fmt.Println(RMSDValue[len(RMSDValue)-1])
 
 	}
 
 	return RMSDValue
-}
-
-func CheckPosition(p Protein) {
-	fmt.Println("Check the nan position index")
-	for _, residue := range p.Residue {
-		for _, atom := range residue.Atoms {
-			if math.IsNaN(atom.position.x) || math.IsNaN(atom.position.y) || math.IsNaN(atom.position.z) {
-				fmt.Println(atom.index)
-			}
-
-		}
-	}
 }
