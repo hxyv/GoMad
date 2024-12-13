@@ -13,7 +13,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue,
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 50 // 100
+	iteration := 100 // 100
 	CheckPosition(timePoints[0])
 	fmt.Println("after first check")
 	for i := 0; i < iteration; i++ {
@@ -119,6 +119,7 @@ func CalculateRMSD(timePoints []Protein) []float64 {
 			}
 		}
 		RMSDValue = append(RMSDValue, math.Sqrt(value/length))
+		//fmt.Println(RMSDValue[len(RMSDValue)-1])
 
 	}
 
