@@ -37,9 +37,60 @@ type UpdateVelocityTest = struct {
 	result          TriTuple
 }
 
+type CalculateRMSDTest = struct {
+	timePoints []Protein
+	result     []float64
+}
+
+type UpdateProteinTest = struct {
+	currentProtein Protein
+	time           float64
+}
+
 // //////////
 // Test area
 // //////////
+func TestCalculateRMSDTest(t *testing.T) {
+	// Read in all tests from the Tests/Distance directory and run them
+	tests := ReadCalculateRMSDTestTests("Tests/CalculateRMSD/")
+	for _, test := range tests {
+		// Run the test
+		ourAnswer := CalculateRMSD(test.timePoints)
+		// Check the result
+		for i := range ourAnswer {
+			if ourAnswer[i] != test.result[i] {
+				t.Errorf("CalculateRMSD(%v) = %v, want %v", i, ourAnswer[i], test.result[i])
+			}
+		}
+	}
+}
+
+func ReadCalculateRMSDTestTests(directory string) []CalculateRMSDTest {
+
+	//read in all tests from the directory and run them
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateRMSDTest, numFiles)
+	for i, inputFile := range inputFiles {
+		tests[i].timePoints, _ = ReadProteins(directory + "input/" + inputFile.Name())
+	}
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFile := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFile.Name())
+		tests[i].result = convertStringToFloatSlice(out[0])
+	}
+
+	return tests
+}
+
 func TestUpdateAcceleration(t *testing.T) {
 	// Read in all tests from the Tests/Distance directory and run them
 	tests := ReadUpdateAccelerationTests("Tests/UpdateAcceleration/")
