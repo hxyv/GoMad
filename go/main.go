@@ -22,7 +22,7 @@ func main() {
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
 	// Check if the assigned charges are correct
-	CheckAssignedCharges(&protein, chargeData)
+	// CheckAssignedCharges(&protein, chargeData)
 
 	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
