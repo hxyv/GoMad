@@ -147,7 +147,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 	angleEnergy := 0.0
 	dihedralEnergy := 0.0
 
-	index := 1
 	for w, residue := range p.Residue {
 
 		// Calculate bondstretch energy
@@ -162,7 +161,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
-							fmt.Println(atom1.element, atom2.element)
+
 							r := Distance(atom1.position, atom2.position)
 							if r == 0 {
 								continue
@@ -174,7 +173,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 
 							if len(parameterList) != 1 {
-								fmt.Println(atom1.element, atom2.element)
+
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 								if math.IsNaN(force.x) {
 									continue
@@ -296,39 +295,39 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 												if math.IsNaN(angleEnergy) {
 													continue
 												}
-												_, exist := forceMap[a+index-len(p.Residue[w-1].Atoms)]
+												_, exist := forceMap[atom1.index]
 												if exist {
-													forceMap[a+index-len(p.Residue[w-1].Atoms)].x += force_i.x
-													forceMap[a+index-len(p.Residue[w-1].Atoms)].y += force_i.y
-													forceMap[a+index-len(p.Residue[w-1].Atoms)].z += force_i.z
+													forceMap[atom1.index].x += force_i.x
+													forceMap[atom1.index].y += force_i.y
+													forceMap[atom1.index].z += force_i.z
 												} else {
-													forceMap[a+index-len(p.Residue[w-1].Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[a+index-len(p.Residue[w-1].Atoms)].x = force_i.x
-													forceMap[a+index-len(p.Residue[w-1].Atoms)].y = force_i.y
-													forceMap[a+index-len(p.Residue[w-1].Atoms)].z = force_i.z
+													forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom1.index].x = force_i.x
+													forceMap[atom1.index].y = force_i.y
+													forceMap[atom1.index].z = force_i.z
 												}
-												_, exist1 := forceMap[i+index]
+												_, exist1 := forceMap[atom2.index]
 												if exist1 {
-													forceMap[i+index].x += force_j.x
-													forceMap[i+index].y += force_j.y
-													forceMap[i+index].z += force_j.z
+													forceMap[atom2.index].x += force_j.x
+													forceMap[atom2.index].y += force_j.y
+													forceMap[atom2.index].z += force_j.z
 												} else {
-													forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[i+index].x = force_j.x
-													forceMap[i+index].y = force_j.y
-													forceMap[i+index].z = force_j.z
+													forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom2.index].x = force_j.x
+													forceMap[atom2.index].y = force_j.y
+													forceMap[atom2.index].z = force_j.z
 												}
 
-												_, exist2 := forceMap[j+index]
+												_, exist2 := forceMap[atom3.index]
 												if exist2 {
-													forceMap[j+index].x += force_k.x
-													forceMap[j+index].y += force_k.y
-													forceMap[j+index].z += force_k.z
+													forceMap[atom3.index].x += force_k.x
+													forceMap[atom3.index].y += force_k.y
+													forceMap[atom3.index].z += force_k.z
 												} else {
-													forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[j+index].x = force_k.x
-													forceMap[j+index].y = force_k.y
-													forceMap[j+index].z = force_k.z
+													forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom3.index].x = force_k.x
+													forceMap[atom3.index].y = force_k.y
+													forceMap[atom3.index].z = force_k.z
 												}
 
 											}
@@ -368,39 +367,39 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 										if math.IsNaN(angleEnergy) {
 											continue
 										}
-										_, exist := forceMap[i+index]
+										_, exist := forceMap[atom1.index]
 										if exist {
-											forceMap[i+index].x += force_i.x
-											forceMap[i+index].y += force_i.y
-											forceMap[i+index].z += force_i.z
+											forceMap[atom1.index].x += force_i.x
+											forceMap[atom1.index].y += force_i.y
+											forceMap[atom1.index].z += force_i.z
 										} else {
-											forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[i+index].x = force_i.x
-											forceMap[i+index].y = force_i.y
-											forceMap[i+index].z = force_i.z
+											forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[atom1.index].x = force_i.x
+											forceMap[atom1.index].y = force_i.y
+											forceMap[atom1.index].z = force_i.z
 										}
-										_, exist1 := forceMap[j+index]
+										_, exist1 := forceMap[atom2.index]
 										if exist1 {
-											forceMap[j+index].x += force_j.x
-											forceMap[j+index].y += force_j.y
-											forceMap[j+index].z += force_j.z
+											forceMap[atom2.index].x += force_j.x
+											forceMap[atom2.index].y += force_j.y
+											forceMap[atom2.index].z += force_j.z
 										} else {
-											forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[j+index].x = force_j.x
-											forceMap[j+index].y = force_j.y
-											forceMap[j+index].z = force_j.z
+											forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[atom2.index].x = force_j.x
+											forceMap[atom2.index].y = force_j.y
+											forceMap[atom2.index].z = force_j.z
 										}
 
-										_, exist2 := forceMap[k+index]
+										_, exist2 := forceMap[atom3.index]
 										if exist2 {
-											forceMap[k+index].x += force_k.x
-											forceMap[k+index].y += force_k.y
-											forceMap[k+index].z += force_k.z
+											forceMap[atom3.index].x += force_k.x
+											forceMap[atom3.index].y += force_k.y
+											forceMap[atom3.index].z += force_k.z
 										} else {
-											forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-											forceMap[k+index].x = force_k.x
-											forceMap[k+index].y = force_k.y
-											forceMap[k+index].z = force_k.z
+											forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+											forceMap[atom3.index].x = force_k.x
+											forceMap[atom3.index].y = force_k.y
+											forceMap[atom3.index].z = force_k.z
 										}
 									}
 
@@ -427,40 +426,40 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 											if math.IsNaN(angleEnergy) {
 												continue
 											}
-											_, exist := forceMap[i+index]
+											_, exist := forceMap[atom1.index]
 											if exist {
-												forceMap[i+index].x += force_i.x
-												forceMap[i+index].y += force_i.y
-												forceMap[i+index].z += force_i.z
+												forceMap[atom1.index].x += force_i.x
+												forceMap[atom1.index].y += force_i.y
+												forceMap[atom1.index].z += force_i.z
 											} else {
-												forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[i+index].x = force_i.x
-												forceMap[i+index].y = force_i.y
-												forceMap[i+index].z = force_i.z
+												forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom1.index].x = force_i.x
+												forceMap[atom1.index].y = force_i.y
+												forceMap[atom1.index].z = force_i.z
 											}
 
-											_, exist1 := forceMap[j+index]
+											_, exist1 := forceMap[atom2.index]
 											if exist1 {
-												forceMap[j+index].x += force_j.x
-												forceMap[j+index].y += force_j.y
-												forceMap[j+index].z += force_j.z
+												forceMap[atom2.index].x += force_j.x
+												forceMap[atom2.index].y += force_j.y
+												forceMap[atom2.index].z += force_j.z
 											} else {
-												forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[j+index].x = force_j.x
-												forceMap[j+index].y = force_j.y
-												forceMap[j+index].z = force_j.z
+												forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom2.index].x = force_j.x
+												forceMap[atom2.index].y = force_j.y
+												forceMap[atom2.index].z = force_j.z
 											}
 
-											_, exist2 := forceMap[k+index+len(residue.Atoms)]
+											_, exist2 := forceMap[atom3.index]
 											if exist2 {
-												forceMap[k+index+len(residue.Atoms)].x += force_k.x
-												forceMap[k+index+len(residue.Atoms)].y += force_k.y
-												forceMap[k+index+len(residue.Atoms)].z += force_k.z
+												forceMap[atom3.index].x += force_k.x
+												forceMap[atom3.index].y += force_k.y
+												forceMap[atom3.index].z += force_k.z
 											} else {
-												forceMap[k+index+len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[k+index+len(residue.Atoms)].x = force_k.x
-												forceMap[k+index+len(residue.Atoms)].y = force_k.y
-												forceMap[k+index+len(residue.Atoms)].z = force_k.z
+												forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom3.index].x = force_k.x
+												forceMap[atom3.index].y = force_k.y
+												forceMap[atom3.index].z = force_k.z
 											}
 
 										}
@@ -502,52 +501,52 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 									if math.IsNaN(dihedralEnergy) {
 										continue
 									}
-									_, exist := forceMap[i+index-len(residue.Atoms)]
+									_, exist := forceMap[atom1.index]
 									if exist {
-										forceMap[i+index-len(residue.Atoms)].x += force_i.x
-										forceMap[i+index-len(residue.Atoms)].y += force_i.y
-										forceMap[i+index-len(residue.Atoms)].z += force_i.z
+										forceMap[atom1.index].x += force_i.x
+										forceMap[atom1.index].y += force_i.y
+										forceMap[atom1.index].z += force_i.z
 									} else {
-										forceMap[i+index-len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[i+index-len(residue.Atoms)].x = force_i.x
-										forceMap[i+index-len(residue.Atoms)].y = force_i.y
-										forceMap[i+index-len(residue.Atoms)].z = force_i.z
+										forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[atom1.index].x = force_i.x
+										forceMap[atom1.index].y = force_i.y
+										forceMap[atom1.index].z = force_i.z
 									}
 
-									_, exist1 := forceMap[i+index-len(residue.Atoms)+1]
+									_, exist1 := forceMap[atom2.index]
 									if exist1 {
-										forceMap[i+index-len(residue.Atoms)+1].x += force_j.x
-										forceMap[i+index-len(residue.Atoms)+1].y += force_j.y
-										forceMap[i+index-len(residue.Atoms)+1].z += force_j.z
+										forceMap[atom2.index].x += force_j.x
+										forceMap[atom2.index].y += force_j.y
+										forceMap[atom2.index].z += force_j.z
 									} else {
-										forceMap[i+index-len(residue.Atoms)+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[i+index-len(residue.Atoms)+1].x = force_j.x
-										forceMap[i+index-len(residue.Atoms)+1].y = force_j.y
-										forceMap[i+index-len(residue.Atoms)+1].z = force_j.z
+										forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[atom2.index].x = force_j.x
+										forceMap[atom2.index].y = force_j.y
+										forceMap[atom2.index].z = force_j.z
 									}
 
-									_, exist2 := forceMap[j+index]
+									_, exist2 := forceMap[atom3.index]
 									if exist2 {
-										forceMap[j+index].x += force_k.x
-										forceMap[j+index].y += force_k.y
-										forceMap[j+index].z += force_k.z
+										forceMap[atom3.index].x += force_k.x
+										forceMap[atom3.index].y += force_k.y
+										forceMap[atom3.index].z += force_k.z
 									} else {
-										forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[j+index].x = force_k.x
-										forceMap[j+index].y = force_k.y
-										forceMap[j+index].z = force_k.z
+										forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[atom3.index].x = force_k.x
+										forceMap[atom3.index].y = force_k.y
+										forceMap[atom3.index].z = force_k.z
 									}
 
-									_, exist3 := forceMap[j+index+1]
+									_, exist3 := forceMap[atom4.index]
 									if exist3 {
-										forceMap[j+index+1].x += force_l.x
-										forceMap[j+index+1].y += force_l.y
-										forceMap[j+index+1].z += force_l.z
+										forceMap[atom4.index].x += force_l.x
+										forceMap[atom4.index].y += force_l.y
+										forceMap[atom4.index].z += force_l.z
 									} else {
-										forceMap[j+index+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-										forceMap[j+index+1].x = force_l.x
-										forceMap[j+index+1].y = force_l.y
-										forceMap[j+index+1].z = force_l.z
+										forceMap[atom4.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+										forceMap[atom4.index].x = force_l.x
+										forceMap[atom4.index].y = force_l.y
+										forceMap[atom4.index].z = force_l.z
 									}
 
 								}
@@ -581,52 +580,52 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 							if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 || Distance(atom3.position, atom4.position) > 2 {
 								continue
 							}
-							_, exist := forceMap[i+index-len(residue.Atoms)]
+							_, exist := forceMap[atom1.index]
 							if exist {
-								forceMap[i+index-len(residue.Atoms)].x += force_i.x
-								forceMap[i+index-len(residue.Atoms)].y += force_i.y
-								forceMap[i+index-len(residue.Atoms)].z += force_i.z
+								forceMap[atom1.index].x += force_i.x
+								forceMap[atom1.index].y += force_i.y
+								forceMap[atom1.index].z += force_i.z
 							} else {
-								forceMap[i+index-len(residue.Atoms)] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[i+index-len(residue.Atoms)].x = force_i.x
-								forceMap[i+index-len(residue.Atoms)].y = force_i.y
-								forceMap[i+index-len(residue.Atoms)].z = force_i.z
+								forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[atom1.index].x = force_i.x
+								forceMap[atom1.index].y = force_i.y
+								forceMap[atom1.index].z = force_i.z
 							}
 
-							_, exist1 := forceMap[index]
+							_, exist1 := forceMap[atom2.index]
 							if exist1 {
-								forceMap[index].x += force_j.x
-								forceMap[index].y += force_j.y
-								forceMap[index].z += force_j.z
+								forceMap[atom2.index].x += force_j.x
+								forceMap[atom2.index].y += force_j.y
+								forceMap[atom2.index].z += force_j.z
 							} else {
-								forceMap[index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index].x = force_j.x
-								forceMap[index].y = force_j.y
-								forceMap[index].z = force_j.z
+								forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[atom2.index].x = force_j.x
+								forceMap[atom2.index].y = force_j.y
+								forceMap[atom2.index].z = force_j.z
 							}
 
-							_, exist2 := forceMap[index+1]
+							_, exist2 := forceMap[atom3.index]
 							if exist2 {
-								forceMap[index+1].x += force_k.x
-								forceMap[index+1].y += force_k.y
-								forceMap[index+1].z += force_k.z
+								forceMap[atom3.index].x += force_k.x
+								forceMap[atom3.index].y += force_k.y
+								forceMap[atom3.index].z += force_k.z
 							} else {
-								forceMap[index+1] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index+1].x = force_k.x
-								forceMap[index+1].y = force_k.y
-								forceMap[index+1].z = force_k.z
+								forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[atom3.index].x = force_k.x
+								forceMap[atom3.index].y = force_k.y
+								forceMap[atom3.index].z = force_k.z
 							}
 
-							_, exist3 := forceMap[index+2]
+							_, exist3 := forceMap[atom4.index]
 							if exist3 {
-								forceMap[index+2].x += force_l.x
-								forceMap[index+2].y += force_l.y
-								forceMap[index+2].z += force_l.z
+								forceMap[atom4.index].x += force_l.x
+								forceMap[atom4.index].y += force_l.y
+								forceMap[atom4.index].z += force_l.z
 							} else {
-								forceMap[index+2] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-								forceMap[index+2].x = force_l.x
-								forceMap[index+2].y = force_l.y
-								forceMap[index+2].z = force_l.z
+								forceMap[atom4.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+								forceMap[atom4.index].x = force_l.x
+								forceMap[atom4.index].y = force_l.y
+								forceMap[atom4.index].z = force_l.z
 							}
 
 						}
@@ -661,52 +660,52 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 												if math.IsNaN(dihedralEnergy) {
 													continue
 												}
-												_, exist := forceMap[i+index]
+												_, exist := forceMap[atom1.index]
 												if exist {
-													forceMap[i+index].x += force_i.x
-													forceMap[i+index].y += force_i.y
-													forceMap[i+index].z += force_i.z
+													forceMap[atom1.index].x += force_i.x
+													forceMap[atom1.index].y += force_i.y
+													forceMap[atom1.index].z += force_i.z
 												} else {
-													forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[i+index].x = force_i.x
-													forceMap[i+index].y = force_i.y
-													forceMap[i+index].z = force_i.z
+													forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom1.index].x = force_i.x
+													forceMap[atom1.index].y = force_i.y
+													forceMap[atom1.index].z = force_i.z
 												}
 
-												_, exist1 := forceMap[j+index]
+												_, exist1 := forceMap[atom2.index]
 												if exist1 {
-													forceMap[j+index].x += force_j.x
-													forceMap[j+index].y += force_j.y
-													forceMap[j+index].z += force_j.z
+													forceMap[atom2.index].x += force_j.x
+													forceMap[atom2.index].y += force_j.y
+													forceMap[atom2.index].z += force_j.z
 												} else {
-													forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[j+index].x = force_j.x
-													forceMap[j+index].y = force_j.y
-													forceMap[j+index].z = force_j.z
+													forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom2.index].x = force_j.x
+													forceMap[atom2.index].y = force_j.y
+													forceMap[atom2.index].z = force_j.z
 												}
 
-												_, exist2 := forceMap[k+index]
+												_, exist2 := forceMap[atom3.index]
 												if exist2 {
-													forceMap[k+index].x += force_k.x
-													forceMap[k+index].y += force_k.y
-													forceMap[k+index].z += force_k.z
+													forceMap[atom3.index].x += force_k.x
+													forceMap[atom3.index].y += force_k.y
+													forceMap[atom3.index].z += force_k.z
 												} else {
-													forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[k+index].x = force_k.x
-													forceMap[k+index].y = force_k.y
-													forceMap[k+index].z = force_k.z
+													forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom3.index].x = force_k.x
+													forceMap[atom3.index].y = force_k.y
+													forceMap[atom3.index].z = force_k.z
 												}
 
-												_, exist3 := forceMap[l+index]
+												_, exist3 := forceMap[atom4.index]
 												if exist3 {
-													forceMap[l+index].x += force_l.x
-													forceMap[l+index].y += force_l.y
-													forceMap[l+index].z += force_l.z
+													forceMap[atom4.index].x += force_l.x
+													forceMap[atom4.index].y += force_l.y
+													forceMap[atom4.index].z += force_l.z
 												} else {
-													forceMap[l+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-													forceMap[l+index].x = force_l.x
-													forceMap[l+index].y = force_l.y
-													forceMap[l+index].z = force_l.z
+													forceMap[atom4.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+													forceMap[atom4.index].x = force_l.x
+													forceMap[atom4.index].y = force_l.y
+													forceMap[atom4.index].z = force_l.z
 												}
 
 											}
@@ -730,52 +729,52 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 											if Distance(atom3.position, atom2.position) > 2 || Distance(atom2.position, atom1.position) > 2 || Distance(atom3.position, atom4.position) > 2 {
 												continue
 											}
-											_, exist := forceMap[i+index]
+											_, exist := forceMap[atom1.index]
 											if exist {
-												forceMap[i+index].x += force_i.x
-												forceMap[i+index].y += force_i.y
-												forceMap[i+index].z += force_i.z
+												forceMap[atom1.index].x += force_i.x
+												forceMap[atom1.index].y += force_i.y
+												forceMap[atom1.index].z += force_i.z
 											} else {
-												forceMap[i+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[i+index].x = force_i.x
-												forceMap[i+index].y = force_i.y
-												forceMap[i+index].z = force_i.z
+												forceMap[atom1.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom1.index].x = force_i.x
+												forceMap[atom1.index].y = force_i.y
+												forceMap[atom1.index].z = force_i.z
 											}
 
-											_, exist1 := forceMap[j+index]
+											_, exist1 := forceMap[atom2.index]
 											if exist1 {
-												forceMap[j+index].x += force_j.x
-												forceMap[j+index].y += force_j.y
-												forceMap[j+index].z += force_j.z
+												forceMap[atom2.index].x += force_j.x
+												forceMap[atom2.index].y += force_j.y
+												forceMap[atom2.index].z += force_j.z
 											} else {
-												forceMap[j+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[j+index].x = force_j.x
-												forceMap[j+index].y = force_j.y
-												forceMap[j+index].z = force_j.z
+												forceMap[atom2.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom2.index].x = force_j.x
+												forceMap[atom2.index].y = force_j.y
+												forceMap[atom2.index].z = force_j.z
 											}
 
-											_, exist2 := forceMap[k+index]
+											_, exist2 := forceMap[atom3.index]
 											if exist2 {
-												forceMap[k+index].x += force_k.x
-												forceMap[k+index].y += force_k.y
-												forceMap[k+index].z += force_k.z
+												forceMap[atom3.index].x += force_k.x
+												forceMap[atom3.index].y += force_k.y
+												forceMap[atom3.index].z += force_k.z
 											} else {
-												forceMap[k+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[k+index].x = force_k.x
-												forceMap[k+index].y = force_k.y
-												forceMap[k+index].z = force_k.z
+												forceMap[atom3.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom3.index].x = force_k.x
+												forceMap[atom3.index].y = force_k.y
+												forceMap[atom3.index].z = force_k.z
 											}
 
-											_, exist3 := forceMap[len(residue.Atoms)+index]
+											_, exist3 := forceMap[atom4.index]
 											if exist3 {
-												forceMap[index+len(residue.Atoms)].x += force_l.x
-												forceMap[len(residue.Atoms)+index].y += force_l.y
-												forceMap[len(residue.Atoms)+index].z += force_l.z
+												forceMap[atom4.index].x += force_l.x
+												forceMap[atom4.index].y += force_l.y
+												forceMap[atom4.index].z += force_l.z
 											} else {
-												forceMap[len(residue.Atoms)+index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
-												forceMap[len(residue.Atoms)+index].x = force_l.x
-												forceMap[len(residue.Atoms)+index].y = force_l.y
-												forceMap[len(residue.Atoms)+index].z = force_l.z
+												forceMap[atom4.index] = &TriTuple{x: 0.0, y: 0.0, z: 0.0}
+												forceMap[atom4.index].x = force_l.x
+												forceMap[atom4.index].y = force_l.y
+												forceMap[atom4.index].z = force_l.z
 											}
 
 										}
@@ -790,7 +789,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 			}
 
 		}
-		index += len(residue.Atoms)
 
 	}
 
@@ -822,7 +820,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				continue
 			}
 
-			if atoms[j].element != parameterData.atomPair[i].atomName[j] {
+			if atoms[j].element[0] != parameterData.atomPair[i].atomName[j][0] {
 				break
 			}
 			sym += 1
@@ -857,7 +855,7 @@ func SearchParameter(value int, parameterData parameterDatabase, atoms ...*Atom)
 				continue
 			}
 
-			if atoms[j].element != parameterData.atomPair[i].atomName[value-j-1] {
+			if atoms[j].element[0] != parameterData.atomPair[i].atomName[value-j-1][0] {
 				break
 			}
 			sym += 1

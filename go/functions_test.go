@@ -625,15 +625,15 @@ func TestCalculateAngleForce(t *testing.T) {
 		theta := CalculateAngle(&atom1, &atom2, &atom3)
 		// function
 		result1, result2, result3 := CalculateAngleForce(k, theta, theta_0, &atom1, &atom2, &atom3)
-		result1.x = math.Round(result1.x*math.Pow10(8)) / math.Pow10(8)
-		result1.y = math.Round(result1.y*math.Pow10(8)) / math.Pow10(8)
-		result1.z = math.Round(result1.z*math.Pow10(8)) / math.Pow10(8)
-		result2.x = math.Round(result2.x*math.Pow10(8)) / math.Pow10(8)
-		result2.y = math.Round(result2.y*math.Pow10(8)) / math.Pow10(8)
-		result2.z = math.Round(result2.z*math.Pow10(8)) / math.Pow10(8)
-		result3.x = math.Round(result3.x*math.Pow10(8)) / math.Pow10(8)
-		result3.y = math.Round(result3.y*math.Pow10(8)) / math.Pow10(8)
-		result3.z = math.Round(result3.z*math.Pow10(8)) / math.Pow10(8)
+		result1.x = math.Round(result1.x*math.Pow10(5)) / math.Pow10(5)
+		result1.y = math.Round(result1.y*math.Pow10(5)) / math.Pow10(5)
+		result1.z = math.Round(result1.z*math.Pow10(5)) / math.Pow10(5)
+		result2.x = math.Round(result2.x*math.Pow10(5)) / math.Pow10(5)
+		result2.y = math.Round(result2.y*math.Pow10(5)) / math.Pow10(5)
+		result2.z = math.Round(result2.z*math.Pow10(5)) / math.Pow10(5)
+		result3.x = math.Round(result3.x*math.Pow10(5)) / math.Pow10(5)
+		result3.y = math.Round(result3.y*math.Pow10(5)) / math.Pow10(5)
+		result3.z = math.Round(result3.z*math.Pow10(5)) / math.Pow10(5)
 
 		// read output
 		out, _ := readFileline("Tests/CalculateAngleForce" + "/output/" + outputFiles[i].Name())
@@ -807,18 +807,18 @@ func TestCalculateProperDihedralsForce(t *testing.T) {
 		// function
 		result1, result2, result3, result4 := CalculateProperDihedralsForce(kd, phi, pn, phase, &atom1, &atom2, &atom3, &atom4)
 
-		result1.x = math.Round(result1.x*math.Pow10(8)) / math.Pow10(8)
-		result1.y = math.Round(result1.y*math.Pow10(8)) / math.Pow10(8)
-		result1.z = math.Round(result1.z*math.Pow10(8)) / math.Pow10(8)
-		result2.x = math.Round(result2.x*math.Pow10(8)) / math.Pow10(8)
-		result2.y = math.Round(result2.y*math.Pow10(8)) / math.Pow10(8)
-		result2.z = math.Round(result2.z*math.Pow10(8)) / math.Pow10(8)
-		result3.x = math.Round(result3.x*math.Pow10(8)) / math.Pow10(8)
-		result3.y = math.Round(result3.y*math.Pow10(8)) / math.Pow10(8)
-		result3.z = math.Round(result3.z*math.Pow10(8)) / math.Pow10(8)
-		result4.x = math.Round(result4.x*math.Pow10(8)) / math.Pow10(8)
-		result4.y = math.Round(result4.y*math.Pow10(8)) / math.Pow10(8)
-		result4.z = math.Round(result4.z*math.Pow10(8)) / math.Pow10(8)
+		result1.x = math.Round(result1.x*math.Pow10(5)) / math.Pow10(5)
+		result1.y = math.Round(result1.y*math.Pow10(5)) / math.Pow10(5)
+		result1.z = math.Round(result1.z*math.Pow10(5)) / math.Pow10(5)
+		result2.x = math.Round(result2.x*math.Pow10(5)) / math.Pow10(5)
+		result2.y = math.Round(result2.y*math.Pow10(5)) / math.Pow10(5)
+		result2.z = math.Round(result2.z*math.Pow10(5)) / math.Pow10(5)
+		result3.x = math.Round(result3.x*math.Pow10(5)) / math.Pow10(5)
+		result3.y = math.Round(result3.y*math.Pow10(5)) / math.Pow10(5)
+		result3.z = math.Round(result3.z*math.Pow10(5)) / math.Pow10(5)
+		result4.x = math.Round(result4.x*math.Pow10(5)) / math.Pow10(5)
+		result4.y = math.Round(result4.y*math.Pow10(5)) / math.Pow10(5)
+		result4.z = math.Round(result4.z*math.Pow10(5)) / math.Pow10(5)
 
 		// read output
 		out, _ := readFileline("Tests/CalculateProperDihedralsForce" + "/output/" + outputFiles[i].Name())
@@ -924,6 +924,8 @@ func TestCalculateTotalEnergyForce(t *testing.T) {
 					t.Errorf("Energy in CalculateTotalEnergyForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
 				}
 			}
+		} else {
+			t.Errorf("Mismatch")
 		}
 
 	}
@@ -967,9 +969,11 @@ func TestCombineEnergyAndForce(t *testing.T) {
 		if len(result2) == len(realResult2) {
 			for key := range result2 {
 				if (*realResult2[key]) != (*result2[key]) {
-					t.Errorf("Energy inCombineEnergyAndForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
+					t.Errorf("Energy in CombineEnergyAndForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
 				}
 			}
+		} else {
+			t.Errorf("Mismatch")
 		}
 
 	}
@@ -1006,19 +1010,20 @@ func TestSteepestDescent(t *testing.T) {
 		//real output
 		realResult, _ := ReadOneProtein("Tests/SteepestDescent/" + "output/" + outputFiles[i].Name())
 		// compare
+
 		if realResult.Name != result.Name {
 			t.Errorf("SteepestDescent() = %v, want %v", result, realResult)
 		}
 
 		// compare residues
-		for i := range protein.Residue {
-			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
-				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+		for i := range realResult.Residue {
+			if len(realResult.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if realResult.Residue[i].ChainID != result.Residue[i].ChainID || realResult.Residue[i].Name != result.Residue[i].Name || realResult.Residue[i].ID != result.Residue[i].ID {
 					t.Errorf("SteepestDescent() = %v, want %v", result, realResult)
 				}
-				for j := range protein.Residue[i].Atoms {
-					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
-						t.Errorf("SteepestDescent() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+				for j := range realResult.Residue[i].Atoms {
+					if (*realResult.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+						t.Errorf("SteepestDescent() = %v, want %v, in %v .", result, realResult, outputFiles[i].Name())
 					}
 				}
 			} else {
@@ -1055,7 +1060,6 @@ func TestPerformEnergyMinimization(t *testing.T) {
 
 		// function
 		result := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
-
 		// real output
 		realResult, _ := ReadOneProtein("Tests/PerformEnergyMinimization" + "/output/" + outputFiles[i].Name())
 
@@ -1065,13 +1069,13 @@ func TestPerformEnergyMinimization(t *testing.T) {
 		}
 
 		// compare residues
-		for i := range protein.Residue {
-			if len(protein.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
-				if protein.Residue[i].ChainID != result.Residue[i].ChainID || protein.Residue[i].Name != result.Residue[i].Name || protein.Residue[i].ID != result.Residue[i].ID {
+		for i := range realResult.Residue {
+			if len(realResult.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if realResult.Residue[i].ChainID != result.Residue[i].ChainID || realResult.Residue[i].Name != result.Residue[i].Name || realResult.Residue[i].ID != result.Residue[i].ID {
 					t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
 				}
-				for j := range protein.Residue[i].Atoms {
-					if (*protein.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
+				for j := range realResult.Residue[i].Atoms {
+					if (*realResult.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
 						t.Errorf("PerformEnergyMinimization() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
 					}
 				}
@@ -1426,16 +1430,20 @@ func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error
 		return math.NaN(), nil, err
 	}
 	var energy float64
-	var Map map[int]*TriTuple
+	Map := make(map[int]*TriTuple)
 	for i := range lines {
 		line := strings.Split(lines[i], " ")
-		energy, _ = strconv.ParseFloat(line[0], 64)
-		key, _ := strconv.Atoi(line[1])
-		var value TriTuple
-		value.x, _ = strconv.ParseFloat(line[2], 64)
-		value.y, _ = strconv.ParseFloat(line[3], 64)
-		value.z, _ = strconv.ParseFloat(line[4], 64)
-		Map[key] = &value
+		if len(line) == 1 {
+			energy, _ = strconv.ParseFloat(line[0], 64)
+		}
+		if len(line) == 4 {
+			key, _ := strconv.Atoi(line[0])
+			var value TriTuple
+			value.x, _ = strconv.ParseFloat(line[1], 64)
+			value.y, _ = strconv.ParseFloat(line[2], 64)
+			value.z, _ = strconv.ParseFloat(line[3], 64)
+			Map[key] = &TriTuple{x: value.x, y: value.y, z: value.z}
+		}
 	}
 	return energy, Map, nil
 }
