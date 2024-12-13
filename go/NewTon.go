@@ -7,14 +7,13 @@ import (
 )
 
 // SimulateMD
-// Input: an initial Protein object, related parameter dataset, and a float time.
+// Input: an initial Protein object, related parameter dataset, a float time and iteration number.
 // Output: a slice of Protein resulting from MD simulation, where the time interval between generations is specified by time.
-func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) []Protein {
+func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase, iteration int) []Protein {
 	timePoints := make([]Protein, 0)
 	cerition := 10000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 100 // 100
 
 	// range over each iteration
 	for i := 0; i < iteration; i++ {

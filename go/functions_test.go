@@ -1133,12 +1133,21 @@ func TestPerformEnergyMinimization(t *testing.T) {
 	for i, inputFile := range inputFiles {
 		// read input
 		protein, _ := ReadOneProtein("Tests/PerformEnergyMinimization/" + "input/" + inputFile.Name())
-
+		iteration := 1
 		// function
-		result := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+		result := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter, iteration)
 		// real output
 		realResult, _ := ReadOneProtein("Tests/PerformEnergyMinimization" + "/output/" + outputFiles[i].Name())
 
+		fmt.Println(result.Name)
+		for t := range result.Residue {
+			fmt.Println(result.Residue[t].Name)
+			fmt.Println(result.Residue[t].ID)
+			fmt.Println(result.Residue[t].ChainID)
+			for m := range result.Residue[t].Atoms {
+				fmt.Println(*result.Residue[t].Atoms[m])
+			}
+		}
 		// compare
 		if realResult.Name != result.Name {
 			t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
@@ -1152,7 +1161,7 @@ func TestPerformEnergyMinimization(t *testing.T) {
 				}
 				for j := range realResult.Residue[i].Atoms {
 					if (*realResult.Residue[i].Atoms[j]) != (*result.Residue[i].Atoms[j]) {
-						t.Errorf("PerformEnergyMinimization() = %v, want %v, in %v.", result, realResult, outputFiles[i].Name())
+						t.Errorf("PerformEnergyMinimization() = %v, want %v, in %v with atom %v in %v.", result, realResult, outputFiles[i].Name(), *realResult.Residue[i].Atoms[j], *result.Residue[i].Atoms[j])
 					}
 				}
 			} else {

@@ -151,11 +151,9 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 }
 
 // Perform Energy minimization
-// Input: A pointer of a protein and parameter datasets of unbonded, bonded and whether atoms are bound
+// Input: A pointer of a protein and parameter datasets of unbonded, bonded and whether atoms are bound and iteration
 // Output: A pointer of updated Protein
-func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	// set the iteration
-	iteration := 50
+func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase, iteration int) *Protein {
 
 	// set maximum displacement
 	h := 0.01
