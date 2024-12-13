@@ -77,7 +77,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 	fmt.Println("bondedEnergy is:", bondedEnergy)
 	fmt.Println("unbondedEnergy is:", unbondedEnergy)
 	// Combine energies
-	totalEnergy := bondedEnergy //+ unbondedEnergy
+	totalEnergy := bondedEnergy + unbondedEnergy
 	// Create a total force map
 	totalForceMap := make(map[int]*TriTuple)
 	for index, force := range bondedForceMap {
@@ -162,7 +162,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 						if residue.Atoms[j].element == (*bondPairs).atoms[1] {
 
 							atom2 := residue.Atoms[j]
-							// fmt.Println(atom1.element, atom2.element)
 							r := Distance(atom1.position, atom2.position)
 							if r == 0 {
 								continue
@@ -174,7 +173,6 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 							parameterList := SearchParameter(2, bondParameter, atom1, atom2)
 
 							if len(parameterList) != 1 {
-								// fmt.Println(atom1.element, atom2.element)
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 								if math.IsNaN(force.x) {
 									continue
@@ -900,7 +898,6 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 }
 
 func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
-	//fmt.Println(atom1.element, atom2.element)
 	bondLen := Distance(atom1.position, atom2.position)
 	unitVector := TriTuple{
 		x: -(atom1.position.x - atom2.position.x) / bondLen,
