@@ -107,7 +107,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 }
 
 func PerformEnergyMinimization(currentProtein *Protein, residueParameterBondValue, residueParameterOtherValue map[string]residueParameter, bondParameter, angleParameter, dihedralParameter, nonbondParameter, pairtypesParameter parameterDatabase) *Protein {
-	iteration := 50
+	iteration := 2
 	// set maximum displacement
 	h := 0.01
 

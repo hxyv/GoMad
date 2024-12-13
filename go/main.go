@@ -6,7 +6,7 @@ func main() {
 	// protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
 	// Check(err)
 
-	filepath := "../data/hsucp1_af3.pdb"
+	filepath := "../data/calmodulin_noCA.pdb"
 	time := 1.0
 	protein, err := readProteinFromFile(filepath)
 	Check(err)

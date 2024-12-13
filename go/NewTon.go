@@ -13,7 +13,7 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue,
 	cerition := 100000000000.0
 	timePoints = append(timePoints, initialProtein)
 	totalTime := 0.0
-	iteration := 10 // 100
+	iteration := 2 // 100
 	CheckPosition(timePoints[0])
 	fmt.Println("after first check")
 	for i := 0; i < iteration; i++ {
@@ -24,7 +24,6 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue,
 		if totalTime > cerition {
 			break
 		}
-		fmt.Println("Distance between input and new protein at 962 N:", Distance(initialProtein.Residue[65].Atoms[0].position, newProtein.Residue[65].Atoms[0].position))
 	}
 
 	return timePoints
