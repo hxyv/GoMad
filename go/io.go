@@ -1,3 +1,4 @@
+// This file contains all the function which read files
 package main
 
 import (

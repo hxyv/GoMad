@@ -47,7 +47,7 @@ func (v *VerletList) BuildNeighbor(protein *Protein) {
 						continue
 					}
 					distance := Distance(atom.position, otherAtom.position)
-					if distance <= v.Cutoff && distance > 2.0 {
+					if distance <= cutoffPlusBuffer && distance > 2.5 {
 						v.Neighbors[atom] = append(v.Neighbors[atom], otherAtom)
 					}
 				}
