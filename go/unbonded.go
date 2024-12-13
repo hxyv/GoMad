@@ -134,9 +134,7 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				forceMap[atom1.index].y += electricForce.y
 				forceMap[atom1.index].z += electricForce.z
 
-				// if atom1.index == 961 {
-				// 	fmt.Printf("Electrostatic force at 962 %s due to %s at %d is %f:\n", atom1.element, atom2.element, atom2.index, electricForce)
-				// }
+				fmt.Println("atom1's charge:", atom1.charge, "atom2's charge:", atom2.charge, "Distance: ", r, "electricForce is: ", electricForce)
 			}
 		}
 	}
