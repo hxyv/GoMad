@@ -1,10 +1,6 @@
 // The main file which performs the model
 package main
 
-import (
-	"fmt"
-)
-
 func main() {
 	// filepath := os.Args[1]
 	// time, _ := strconv.ParseFloat(os.Args[2], 64)
@@ -22,8 +18,6 @@ func main() {
 
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
-	// Check if the assigned charges are correct
-	CheckAssignedCharges(&protein, chargeData)
 
 	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
@@ -57,61 +51,4 @@ func Check(err error) {
 		panic(err)
 	}
 
-}
-
-func printParameterDatabase(db *parameterDatabase) {
-	for _, pair := range db.atomPair {
-		fmt.Println("Atom Names:")
-		for _, name := range pair.atomName {
-			fmt.Printf("  %s\n", name)
-		}
-		fmt.Printf("Function: %d\n", pair.Function)
-		fmt.Println("Parameters:")
-		for _, param := range pair.parameter {
-			fmt.Printf("  %.2f\n", param)
-		}
-		fmt.Println()
-	}
-}
-
-func printProtein(protein *Protein) {
-	fmt.Printf("Protein Name: %s\n", protein.Name)
-	for _, residue := range protein.Residue {
-		fmt.Printf("  Residue Name: %s, ID: %d, ChainID: %s\n", residue.Name, residue.ID, residue.ChainID)
-		for _, atom := range residue.Atoms {
-			fmt.Printf("    Atom Index: %d, Element: %s, Position: (%.2f, %.2f, %.2f)\n",
-				atom.index, atom.element, atom.position.x, atom.position.y, atom.position.z)
-		}
-	}
-}
-
-func CheckAssignedCharges(protein *Protein, chargeData map[string]map[string]float64) {
-	for _, residue := range protein.Residue {
-		residueName := residue.Name
-
-		// Get the charge data for this residue, if it exists
-		residueChargeData, residueExists := chargeData[residueName]
-
-		if !residueExists {
-			fmt.Printf("Warning: No charge data found for residue %s\n", residueName)
-			continue
-		}
-
-		for _, atom := range residue.Atoms {
-			atomName := atom.element
-
-			// Try to get the charge data for this atom
-			expectedCharge, atomExists := residueChargeData[atomName]
-			if !atomExists {
-				fmt.Printf("Warning: No charge data found for atom %s in residue %s\n", atomName, residueName)
-				continue
-			}
-
-			// Check if the assigned charge matches the expected charge
-			if atom.charge != expectedCharge {
-				fmt.Printf("Discrepancy found: Residue %s, Atom %s, Assigned Charge: %f, Expected Charge: %f\n",
-					residueName, atomName, atom.charge, expectedCharge)
-			}
-		}
-	}
 }

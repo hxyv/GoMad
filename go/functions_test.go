@@ -38,11 +38,128 @@ type UpdateVelocityTest = struct {
 	result          TriTuple
 }
 
+type CalculateRMSDTest = struct {
+	timePoints []Protein
+	result     []float64
+}
+
+type UpdateProteinTest = struct {
+	currentProtein Protein
+	time           float64
+}
+
+type CalculateElectricPotentialEnergyTest struct {
+	a1, a2 Atom
+	r      float64
+	result float64
+}
+
+type CalculateLJPotentialEnergyTest struct {
+	A, B, r float64
+	result  float64
+}
+
+type CalculateElectricForceTest struct {
+	a1, a2 Atom
+	r      float64
+	result TriTuple
+}
+
+type CalculateLJForceTest struct {
+	A, B, r float64
+	a1, a2  Atom
+	result  TriTuple
+}
+
 // //////////
 // Test area
 // //////////
 
-// Test UpdateAcceleration
+func TestCalculateElectricPotentialEnergy(t *testing.T) {
+	tests := ReadCalculateElectricPotentialEnergyTests("Tests/CalculateElectricPotentialEnergy/")
+
+	for _, test := range tests {
+		result := CalculateElectricPotentialEnergy(&test.a1, &test.a2, test.r)
+		if result != test.result {
+			t.Errorf("CalculateElectricPotentialEnergy(%v, %v, %v) = %v; expected %v", test.a1, test.a2, test.r, result, test.result)
+		}
+	}
+}
+
+func TestCalculateLJPotentialEnergy(t *testing.T) {
+	tests := ReadCalculateLJPotentialEnergyTest("Tests/CalculateLJPotentialEnergy/")
+
+	for _, test := range tests {
+		result := CalculateLJPotentialEnergy(test.B, test.A, test.r)
+		if result != test.result {
+			t.Errorf("CalculateLJPotentialEnergy(%v, %v, %v) = %v; expected %v", test.A, test.B, test.r, result, test.result)
+		}
+	}
+}
+
+func TestCalculateElectricForce(t *testing.T) {
+	tests := ReadCalculateElectricForceTests("Tests/CalculateElectricForce/")
+
+	for _, test := range tests {
+		result := CalculateElectricForce(&test.a1, &test.a2, test.r)
+		if result != test.result {
+			t.Errorf("CalculateElectricForce(%v, %v, %v) = %v; expected %v", test.a1, test.a2, test.r, result, test.result)
+		}
+	}
+}
+
+func TestCalculateLJForce(t *testing.T) {
+	tests := ReadCalculateLJForceTest("Tests/CalculateLJForce/")
+
+	for _, test := range tests {
+		result := CalculateLJForce(&test.a1, &test.a2, test.B, test.A, test.r)
+		if result != test.result {
+			t.Errorf("CalculateLJForce(%v, %v, %v, %v, %v) = %v; expected %v", test.A, test.B, test.r, test.A, test.B, result, test.result)
+		}
+	}
+}
+
+func TestCalculateRMSDTest(t *testing.T) {
+	// Read in all tests from the Tests/Distance directory and run them
+	tests := ReadCalculateRMSDTestTests("Tests/CalculateRMSD/")
+	for _, test := range tests {
+		// Run the test
+		ourAnswer := CalculateRMSD(test.timePoints)
+		// Check the result
+		for i := range ourAnswer {
+			if ourAnswer[i] != test.result[i] {
+				t.Errorf("CalculateRMSD(%v) = %v, want %v", i, ourAnswer[i], test.result[i])
+			}
+		}
+	}
+}
+
+func ReadCalculateRMSDTestTests(directory string) []CalculateRMSDTest {
+
+	//read in all tests from the directory and run them
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateRMSDTest, numFiles)
+	for i, inputFile := range inputFiles {
+		tests[i].timePoints, _ = ReadProteins(directory + "input/" + inputFile.Name())
+	}
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFile := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFile.Name())
+		tests[i].result = convertStringToFloatSlice(out[0])
+	}
+
+	return tests
+}
+
 func TestUpdateAcceleration(t *testing.T) {
 	// Read in all tests from the Tests/UpdateAcceleration directory and run them
 	tests := ReadUpdateAccelerationTests("Tests/UpdateAcceleration/")
@@ -1175,6 +1292,147 @@ func TestPerformEnergyMinimization(t *testing.T) {
 // //////////
 // Readtest area
 // //////////
+
+// ReadCalculateElectricPotentialEnergyTests reads the input and output file for CalculateElectricPotentialEnergyTest
+func ReadCalculateElectricPotentialEnergyTests(directory string) []CalculateElectricPotentialEnergyTest {
+
+	// Read input file
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateElectricPotentialEnergyTest, numFiles)
+	for i, inputFile := range inputFiles {
+		pair, _ := readFileline(directory + "input/" + inputFile.Name())
+		tests[i].a1.charge = convertStringToFloatSlice(pair[0])[0]
+		tests[i].a2.charge = convertStringToFloatSlice(pair[0])[1]
+		tests[i].r = convertStringToFloatSlice(pair[1])[0]
+	}
+
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFiles := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFiles.Name())
+		tests[i].result = convertStringToFloatSlice(out[0])[0]
+	}
+
+	return tests
+}
+
+// ReadCalculateLJPotentialEnergyTest reads the input and output file for CalculateLJPotentialEnergyTest
+func ReadCalculateLJPotentialEnergyTest(directory string) []CalculateLJPotentialEnergyTest {
+
+	// Read input file
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateLJPotentialEnergyTest, numFiles)
+	for i, inputFile := range inputFiles {
+		pair, _ := readFileline(directory + "input/" + inputFile.Name())
+		tests[i].B = convertStringToFloatSlice(pair[0])[0]
+		tests[i].A = convertStringToFloatSlice(pair[0])[1]
+		tests[i].r = convertStringToFloatSlice(pair[1])[0]
+	}
+
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFiles := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFiles.Name())
+		tests[i].result = convertStringToFloatSlice(out[0])[0]
+	}
+
+	return tests
+}
+
+// ReadCalculateElectricForceTests reads the input and output file for CalculateElectricForceTest
+func ReadCalculateElectricForceTests(directory string) []CalculateElectricForceTest {
+
+	// Read input file
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateElectricForceTest, numFiles)
+	for i, inputFile := range inputFiles {
+		pair, _ := readFileline(directory + "input/" + inputFile.Name())
+		tests[i].a1.charge = convertStringToFloatSlice(pair[0])[0]
+		tests[i].a2.charge = convertStringToFloatSlice(pair[0])[1]
+		tests[i].r = convertStringToFloatSlice(pair[1])[0]
+		tests[i].a1.position.x = convertStringToFloatSlice(pair[2])[0]
+		tests[i].a1.position.y = convertStringToFloatSlice(pair[2])[1]
+		tests[i].a1.position.z = convertStringToFloatSlice(pair[2])[2]
+		tests[i].a2.position.x = convertStringToFloatSlice(pair[3])[0]
+		tests[i].a2.position.y = convertStringToFloatSlice(pair[3])[1]
+		tests[i].a2.position.z = convertStringToFloatSlice(pair[3])[2]
+	}
+
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFiles := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFiles.Name())
+		tests[i].result.x = convertStringToFloatSlice(out[0])[0]
+		tests[i].result.y = convertStringToFloatSlice(out[1])[0]
+		tests[i].result.z = convertStringToFloatSlice(out[2])[0]
+	}
+
+	return tests
+}
+
+// ReadCalculateLJEnergyTest reads the input and output file for CalculateLJEnergyTest
+func ReadCalculateLJForceTest(directory string) []CalculateLJForceTest {
+
+	// Read input file
+	inputFiles := ReadDirectory(directory + "/input")
+	numFiles := len(inputFiles)
+
+	tests := make([]CalculateLJForceTest, numFiles)
+	for i, inputFile := range inputFiles {
+		pair, _ := readFileline(directory + "input/" + inputFile.Name())
+		tests[i].B = convertStringToFloatSlice(pair[0])[0]
+		tests[i].A = convertStringToFloatSlice(pair[0])[1]
+		tests[i].r = convertStringToFloatSlice(pair[1])[0]
+		tests[i].a1.position.x = convertStringToFloatSlice(pair[2])[0]
+		tests[i].a1.position.y = convertStringToFloatSlice(pair[2])[1]
+		tests[i].a1.position.z = convertStringToFloatSlice(pair[2])[2]
+		tests[i].a2.position.x = convertStringToFloatSlice(pair[3])[0]
+		tests[i].a2.position.y = convertStringToFloatSlice(pair[3])[1]
+		tests[i].a2.position.z = convertStringToFloatSlice(pair[3])[2]
+	}
+
+	//now, read output files
+	outputFiles := ReadDirectory(directory + "/output")
+
+	//ensure same number of input and output files
+	if len(outputFiles) != numFiles {
+		panic("Error: number of input and output files do not match!")
+	}
+
+	for i, outputFiles := range outputFiles {
+		out, _ := readFileline(directory + "output/" + outputFiles.Name())
+		tests[i].result.x = convertStringToFloatSlice(out[0])[0]
+		tests[i].result.y = convertStringToFloatSlice(out[1])[0]
+		tests[i].result.z = convertStringToFloatSlice(out[2])[0]
+	}
+
+	return tests
+}
+
 // func ReadUpdateAcceleration read the input and output file for UpdateAccelerationTest
 func ReadUpdateAccelerationTests(directory string) []UpdateAccelerationTest {
 
