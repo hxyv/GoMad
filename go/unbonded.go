@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -21,7 +20,6 @@ func CalculateLJPotentialEnergy(B, A, r float64) float64 {
 	r_6 := math.Pow(r, 6)
 	r_12 := r_6 * r_6
 	LJ := (A / r_12) - (B / r_6)
-	fmt.Println("LJ energy:", LJ)
 	return LJ
 }
 
