@@ -7,12 +7,14 @@ import (
 )
 
 func main() {
+	// Parse input values
 	filepath := os.Args[1]
 	iteration1, _ := strconv.Atoi(os.Args[2])     // steps for energy minimization
 	iteration2, _ := strconv.Atoi(os.Args[3])     // steps for simulation
 	protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
 	Check(err)
 
+	// Commented for testing
 	// filepath := "../data/calmodulin_noCA.pdb"
 	// iteration1 := 2 // steps for energy minimization
 	// iteration2 := 2 // steps for simulation
@@ -28,6 +30,7 @@ func main() {
 	// Assign charges to the protein's atoms
 	(&protein).AssignChargesToProtein(chargeData)
 
+	// Parse related parameter files
 	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
 	Check(error)
 	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
@@ -42,12 +45,15 @@ func main() {
 	Check(error)
 	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
 	Check(error)
+
+	// First perform energy minimization
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter, iteration1)
+	// Then simulate the protein
 	timepoints := SimulateMD(*initialProtein, time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter, iteration2)
 	RMSD := CalculateRMSD(timepoints)
-	TemporaryPlot(RMSD, time)
-	writeRMSD(RMSD)
-	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb")
+	TemporaryPlot(RMSD, time)                                              // Plot RMSD in GO
+	writeRMSD(RMSD)                                                        // Write RMSD to csv
+	WriteProteinToPDB(&timepoints[len(timepoints)-1], "result/output.pdb") // Write the final protein to pdb
 
 }
 

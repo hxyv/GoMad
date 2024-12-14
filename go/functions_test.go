@@ -123,6 +123,51 @@ func TestCalculateLJForce(t *testing.T) {
 	}
 }
 
+func TestCalculateTotalUnbondedEnergyForce(t *testing.T) {
+	// input and outputfiles
+	inputFiles := ReadDirectory("Tests/CalculateTotalUnbondedEnergyForce" + "/input")
+	outputFiles := ReadDirectory("Tests/CalculateTotalUnbondedEnergyForce" + "/output")
+
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/CalculateTotalUnbondedEnergyForce/" + "input/" + inputFile.Name())
+
+		// function
+		result1, result2 := CalculateTotalUnbondedEnergyForce(&protein, nonbondedParameter)
+		fmt.Println("file:", i)
+		for key, value := range result2 {
+			fmt.Printf("%d  %f  %f  %f\n", key, value.x, value.y, value.z)
+		}
+
+		// real output
+		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CalculateTotalUnbondedEnergyForce/" + "output/" + outputFiles[i].Name())
+		fmt.Println("Real vlaue")
+		for key, value := range realResult2 {
+			fmt.Printf("%d  %f  %f  %f\n", key, value.x, value.y, value.z)
+		}
+
+		// compare
+		if realResult1 != result1 {
+			t.Errorf("Energy in CalculateTotalUnbondedEnergyForce() = %v, want %v in %v", result1, realResult1, outputFiles[i])
+
+		}
+
+		if len(result2) == len(realResult2) {
+			for key := range result2 {
+				if (*realResult2[key]) != (*result2[key]) {
+					t.Errorf("Force in CalculateTotalUnbondedEnergyForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
+				}
+			}
+		} else {
+			t.Errorf("Mismatch")
+		}
+
+	}
+}
+
 // Test CalculateRMSD
 func TestCalculateRMSDTest(t *testing.T) {
 	// Read in all tests from the Tests/Distance directory and run them
@@ -136,6 +181,60 @@ func TestCalculateRMSDTest(t *testing.T) {
 				t.Errorf("CalculateRMSD(%v) = %v, want %v", i, ourAnswer[i], test.result[i])
 			}
 		}
+	}
+}
+
+func TestUpdateProteinTest(t *testing.T) {
+	inputFiles := ReadDirectory("Tests/UpdateProtein" + "/input")
+	outputFiles := ReadDirectory("Tests/UpdateProtein" + "/output")
+
+	time := 1.0
+	residueParameterBondValue, error := ReadAminoAcidsPara("../data/aminoacids_revised.rtp")
+	Check(error)
+	residueParameterOtherValue, error := ReadAminoAcidsPara("../data/aminoacids.rtp")
+	Check(error)
+	bondParameter, error := ReadParameterFile("../data/ffbonded_bondtypes.itp")
+	Check(error)
+	angleParameter, error := ReadParameterFile("../data/ffbonded_angletypes.itp")
+	Check(error)
+	dihedralParameter, error := ReadParameterFile("../data/ffbonded_dihedraltypes.itp")
+	Check(error)
+	nonbondedParameter, error := ReadParameterFile("../data/ffnonbonded_nonbond_params.itp")
+	Check(error)
+	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
+	Check(error)
+
+	for i, inputFile := range inputFiles {
+		// read input
+		protein, _ := ReadOneProtein("Tests/UpdateProtein/" + "input/" + inputFile.Name())
+
+		// function
+		result, _ := UpdateProtein(protein, time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+
+		// real output
+		realResult, _ := ReadOneProtein("Tests/UpdateProtein" + "/output/" + outputFiles[i].Name())
+
+		// compare
+		if realResult.Name != result.Name {
+			t.Errorf("UpdateProtein() = %v, want %v", result, realResult)
+		}
+
+		// compare residues
+		for i := range realResult.Residue {
+			if len(realResult.Residue[i].Atoms) == len(result.Residue[i].Atoms) {
+				if realResult.Residue[i].ChainID != result.Residue[i].ChainID || realResult.Residue[i].Name != result.Residue[i].Name || realResult.Residue[i].ID != result.Residue[i].ID {
+					t.Errorf("UpdateProtein() = %v, want %v", result, realResult)
+				}
+				for j := range realResult.Residue[i].Atoms {
+					if realResult.Residue[i].Atoms[j].position.x != result.Residue[i].Atoms[j].position.x {
+						t.Errorf("UpdateProtein() = %v, want %v, in %v.", realResult.Residue[i].Atoms[j], result.Residue[i].Atoms[j], outputFiles[i].Name())
+					}
+				}
+			} else {
+				t.Errorf("Number mismatch")
+			}
+		}
+
 	}
 }
 
