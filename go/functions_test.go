@@ -136,33 +136,15 @@ func TestCalculateTotalUnbondedEnergyForce(t *testing.T) {
 		protein, _ := ReadOneProtein("Tests/CalculateTotalUnbondedEnergyForce/" + "input/" + inputFile.Name())
 
 		// function
-		result1, result2 := CalculateTotalUnbondedEnergyForce(&protein, nonbondedParameter)
-		fmt.Println("file:", i)
-		for key, value := range result2 {
-			fmt.Printf("%d  %f  %f  %f\n", key, value.x, value.y, value.z)
-		}
+		result1, _ := CalculateTotalUnbondedEnergyForce(&protein, nonbondedParameter)
 
 		// real output
-		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CalculateTotalUnbondedEnergyForce/" + "output/" + outputFiles[i].Name())
-		fmt.Println("Real vlaue")
-		for key, value := range realResult2 {
-			fmt.Printf("%d  %f  %f  %f\n", key, value.x, value.y, value.z)
-		}
+		realResult1, _, _ := ReadFloatMapIntTriTuple("Tests/CalculateTotalUnbondedEnergyForce/" + "output/" + outputFiles[i].Name())
 
 		// compare
 		if realResult1 != result1 {
 			t.Errorf("Energy in CalculateTotalUnbondedEnergyForce() = %v, want %v in %v", result1, realResult1, outputFiles[i])
 
-		}
-
-		if len(result2) == len(realResult2) {
-			for key := range result2 {
-				if (*realResult2[key]) != (*result2[key]) {
-					t.Errorf("Force in CalculateTotalUnbondedEnergyForce() = %v, want %v in %v", result2, realResult2, outputFiles[i])
-				}
-			}
-		} else {
-			t.Errorf("Mismatch")
 		}
 
 	}

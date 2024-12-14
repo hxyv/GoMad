@@ -1,3 +1,4 @@
+# R shiny web app script
 # Install library
 if (!require("shiny")) install.packages("shiny")
 if (!require("ggplot2")) install.packages("ggplot2")
