@@ -118,7 +118,7 @@ func CombineEnergyAndForce(p *Protein, residueParameterBondValue, residueParamet
 	fmt.Println("bondedEnergy is:", bondedEnergy)
 	fmt.Println("unbondedEnergy is:", unbondedEnergy)
 	// Combine energies
-	totalEnergy := bondedEnergy //+ unbondedEnergy
+	totalEnergy := bondedEnergy + unbondedEnergy
 	// Create a total force map
 	totalForceMap := make(map[int]*TriTuple)
 
@@ -231,6 +231,7 @@ func CalculateTotalEnergyForce(p *Protein, residueParameterBondValue, residuePar
 
 							// check whether the parameters exist
 							if len(parameterList) != 1 {
+
 								// calculate the bond force
 								force := CalculateBondForce(parameterList[1], r, parameterList[0], atom1, atom2)
 
@@ -1126,6 +1127,7 @@ func SteepestDescent(protein *Protein, h float64, forceMap map[int]*TriTuple) *P
 // Input: bond force constant, the distance between two atoms and equilibrium bond distance
 // Output: a float64 of bond stretch force
 func CalculateBondForce(k, r, r_0 float64, atom1, atom2 *Atom) TriTuple {
+
 	// Calculate the distance
 	bondLen := Distance(atom1.position, atom2.position)
 

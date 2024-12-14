@@ -24,16 +24,14 @@ func CalculateLJPotentialEnergy(B, A, r float64) float64 {
 	return LJ
 }
 
-func NewVerletList() *VerletList {
+func NewNeighborList() *VerletList {
 	return &VerletList{
 		Neighbors: make(map[*Atom][]*Atom),
 		Cutoff:    verletCutOff,
-		Buffer:    verletBuffer,
 	}
 }
 
-func (v *VerletList) BuildVerlet(protein *Protein) {
-	cutoffPlusBuffer := v.Cutoff + v.Buffer
+func (v *VerletList) BuildNeighbor(protein *Protein) {
 	v.Neighbors = make(map[*Atom][]*Atom)
 
 	for _, residue := range protein.Residue {
@@ -87,8 +85,8 @@ func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]
 func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterDatabase) (float64, map[int]*TriTuple) {
 	forceMap := make(map[int]*TriTuple)
 	totalEnergy := 0.0
-	verletList := NewVerletList()
-	verletList.BuildVerlet(p)
+	verletList := NewNeighborList()
+	verletList.BuildNeighbor(p)
 
 	for _, residue := range p.Residue {
 		for _, atom1 := range residue.Atoms {
@@ -136,9 +134,7 @@ func CalculateTotalUnbondedEnergyForce(p *Protein, nonbondedParameter parameterD
 				forceMap[atom1.index].y += electricForce.y
 				forceMap[atom1.index].z += electricForce.z
 
-				// if atom1.index == 961 {
-				// 	fmt.Printf("Electrostatic force at 962 %s due to %s at %d is %f:\n", atom1.element, atom2.element, atom2.index, electricForce)
-				// }
+				fmt.Println("atom1's charge:", atom1.charge, "atom2's charge:", atom2.charge, "Distance: ", r, "electricForce is: ", electricForce)
 			}
 		}
 	}
