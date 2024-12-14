@@ -1,17 +1,26 @@
 // The main file which performs the model
 package main
 
-func main() {
-	// filepath := os.Args[1]
-	// time, _ := strconv.ParseFloat(os.Args[2], 64)
-	// protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
-	// Check(err)
+import (
+	"os"
+	"strconv"
+)
 
-	filepath := "../data/calmodulin_noCA.pdb"
-	time := 1.0
-	protein, err := readProteinFromFile(filepath)
+func main() {
+	filepath := os.Args[1]
+	iteration1, _ := strconv.Atoi(os.Args[2])     // steps for energy minimization
+	iteration2, _ := strconv.Atoi(os.Args[3])     // steps for simulation
+	protein, err := readProteinFromFile(filepath) //"../data/calmodulin_noCA.pdb"
 	Check(err)
 
+	// filepath := "../data/calmodulin_noCA.pdb"
+	// iteration1 := 2 // steps for energy minimization
+	// iteration2 := 2 // steps for simulation
+	// protein, err := readProteinFromFile(filepath)
+	// Check(err)
+
+	// Each step is 1 fs
+	time := 1.0
 	// Parse the charge data file
 	chargeData, err := parseChargeFile("../data/OPLS_atom_charge.rtp")
 	Check(err)
@@ -33,11 +42,7 @@ func main() {
 	Check(error)
 	pairtypesParameter, error := ReadParameterFile("../data/ffnonbonded_pairtypes.itp")
 	Check(error)
-
-	iteration1 := 50
-	iteration2 := 100
 	initialProtein := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter, iteration1)
-
 	timepoints := SimulateMD(*initialProtein, time, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter, iteration2)
 	RMSD := CalculateRMSD(timepoints)
 	TemporaryPlot(RMSD, time)
