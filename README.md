@@ -2,11 +2,12 @@
 
 We developed this tool using Go to help you run simple molecular dynamics simulation on you proteins.
 
-## Require package
+## Required package
 To run R shiny:
     - shiny
     - ggplot2
     - NGLVieweR
+    - bslib
 
 ## How to use
 1. Run App.R using RStudio
@@ -17,3 +18,6 @@ To run R shiny:
 
 ## External link for demonstration
 https://youtu.be/ZVAlwO2DHy8
+
+## Github
+https://github.com/hxyv/GoMad
