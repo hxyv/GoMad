@@ -1,3 +1,4 @@
+// This file contains all the function related to the calculation of unbond potential energy and corresponeded forces
 package main
 
 import (
@@ -74,27 +75,33 @@ func (v *VerletList) BuildNeighbor(protein *Protein) {
 	}
 }
 
+// AssignChargesToProtein assigns atomic charges to the atoms in a protein using provided charge data.
+// Input: chargeData: A nested map where the first key is the residue name, and the second key is the atom name.
+// The value is the charge assigned to the corresponding atom.
+// Output: None (modifies the atoms in the Protein structure by assigning charges).
 func (protein *Protein) AssignChargesToProtein(chargeData map[string]map[string]float64) {
+	// Iterate through each residue in the protein.
 	for _, residue := range protein.Residue {
 		residueName := residue.Name
 
-		// Get the charge data for this residue, if it exists
+		// Retrieve charge data for the current residue, if available.
 		residueChargeData, residueExists := chargeData[residueName]
 
+		// Iterate through each atom in the residue.
 		for _, atom := range residue.Atoms {
 			atomName := atom.element
 
 			if residueExists {
-				// Try to get the charge data for this atom
+				// Check if charge data for the specific atom exists.
 				atomCharge, atomExists := residueChargeData[atomName]
 				if atomExists {
-					// Assign the charge from the charge data
+					// Assign the charge to the atom if data exists.
 					atom.charge = atomCharge
 					continue
 				}
 			}
 
-			// If there's no data for this atom or residue, assign a charge of 0
+			// Assign a default charge of 0.0 if no data is found for the atom.
 			atom.charge = 0.0
 		}
 	}

@@ -1,16 +1,13 @@
+# R shiny web app script
 # Install library
 if (!require("shiny")) install.packages("shiny")
 if (!require("ggplot2")) install.packages("ggplot2")
 if (!require("NGLVieweR")) install.packages("NGLVieweR")
-if (!require("bslib")) install.packages("bslib")
-if (!require("thematic")) install.packages("thematic")
 
 # Load library
 library(shiny)
 library(ggplot2)
 library(NGLVieweR)
-library(bslib)
-thematic::thematic_shiny(font = "auto")
 
 # Define reusable function for compiling and running the Go program
 run_go_program <- function(file_path, stepEM, timeNewton) {
