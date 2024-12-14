@@ -4,10 +4,10 @@ We developed this tool using Go to help you run simple molecular dynamics simula
 
 ## Required package
 To run R shiny:
-    - shiny
-    - ggplot2
-    - NGLVieweR
-    - bslib
+- shiny
+- ggplot2
+- NGLVieweR
+- bslib
 
 ## How to use
 1. Run App.R using RStudio
