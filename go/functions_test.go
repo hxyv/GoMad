@@ -75,6 +75,7 @@ type CalculateLJForceTest struct {
 // Test area
 // //////////
 
+// Test CalculateElectricPotentialEnergy
 func TestCalculateElectricPotentialEnergy(t *testing.T) {
 	tests := ReadCalculateElectricPotentialEnergyTests("Tests/CalculateElectricPotentialEnergy/")
 
@@ -86,6 +87,7 @@ func TestCalculateElectricPotentialEnergy(t *testing.T) {
 	}
 }
 
+// Test CalculateLJPotentialEnergy
 func TestCalculateLJPotentialEnergy(t *testing.T) {
 	tests := ReadCalculateLJPotentialEnergyTest("Tests/CalculateLJPotentialEnergy/")
 
@@ -97,6 +99,7 @@ func TestCalculateLJPotentialEnergy(t *testing.T) {
 	}
 }
 
+// Test CalculateElectricForce
 func TestCalculateElectricForce(t *testing.T) {
 	tests := ReadCalculateElectricForceTests("Tests/CalculateElectricForce/")
 
@@ -108,6 +111,7 @@ func TestCalculateElectricForce(t *testing.T) {
 	}
 }
 
+// Test CalculateLJForce
 func TestCalculateLJForce(t *testing.T) {
 	tests := ReadCalculateLJForceTest("Tests/CalculateLJForce/")
 
@@ -119,6 +123,7 @@ func TestCalculateLJForce(t *testing.T) {
 	}
 }
 
+// Test CalculateRMSD
 func TestCalculateRMSDTest(t *testing.T) {
 	// Read in all tests from the Tests/Distance directory and run them
 	tests := ReadCalculateRMSDTestTests("Tests/CalculateRMSD/")
