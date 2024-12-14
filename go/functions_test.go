@@ -84,6 +84,40 @@ func TestUpdateVelocity(t *testing.T) {
 	}
 }
 
+// test Distance function
+func TestDistance(t *testing.T) {
+	// input and output files
+	inputFiles := ReadDirectory("Tests/Distance" + "/input")
+	outputFiles := ReadDirectory("Tests/Distance" + "/output")
+
+	for i, inputFile := range inputFiles {
+		// read input
+		pair, _ := readFileline("Tests/Distance/" + "input/" + inputFile.Name())
+		var atom1 Atom
+		atom1.position.x = convertStringToFloatSlice(pair[1])[0]
+		atom1.position.y = convertStringToFloatSlice(pair[1])[1]
+		atom1.position.z = convertStringToFloatSlice(pair[1])[2]
+		var atom2 Atom
+		atom2.position.x = convertStringToFloatSlice(pair[0])[0]
+		atom2.position.y = convertStringToFloatSlice(pair[0])[1]
+		atom2.position.z = convertStringToFloatSlice(pair[0])[2]
+
+		// function
+		result := Distance(atom1.position, atom2.position)
+
+		// read output
+		out, _ := readFileline("Tests/Distance" + "/output/" + outputFiles[i].Name())
+		var realResult float64
+		realResult, _ = strconv.ParseFloat(out[0], 64)
+
+		// compare
+		if realResult != result {
+			t.Errorf("Distance() = %v, want %v", result, realResult)
+		}
+
+	}
+}
+
 // Test CalculateVector
 func TestCalculateVector(t *testing.T) {
 	// input and output files
@@ -1139,15 +1173,6 @@ func TestPerformEnergyMinimization(t *testing.T) {
 		// real output
 		realResult, _ := ReadOneProtein("Tests/PerformEnergyMinimization" + "/output/" + outputFiles[i].Name())
 
-		fmt.Println(result.Name)
-		for t := range result.Residue {
-			fmt.Println(result.Residue[t].Name)
-			fmt.Println(result.Residue[t].ID)
-			fmt.Println(result.Residue[t].ChainID)
-			for m := range result.Residue[t].Atoms {
-				fmt.Println(*result.Residue[t].Atoms[m])
-			}
-		}
 		// compare
 		if realResult.Name != result.Name {
 			t.Errorf("PerformEnergyMinimization() = %v, want %v", result, realResult)
