@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -25,7 +24,6 @@ func SimulateMD(initialProtein Protein, time float64, residueParameterBondValue,
 		if totalTime > cerition {
 			break
 		}
-		fmt.Println("Distance between input and new protein at 962 N:", Distance(initialProtein.Residue[65].Atoms[0].position, newProtein.Residue[65].Atoms[0].position))
 	}
 
 	return timePoints

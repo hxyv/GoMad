@@ -1,9 +1,19 @@
+# Install library
+if (!require("shiny")) install.packages("shiny")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("NGLVieweR")) install.packages("NGLVieweR")
+if (!require("bslib")) install.packages("bslib")
+if (!require("thematic")) install.packages("thematic")
+
+# Load library
 library(shiny)
 library(ggplot2)
 library(NGLVieweR)
+library(bslib)
+thematic::thematic_shiny(font = "auto")
 
 # Define reusable function for compiling and running the Go program
-run_go_program <- function(file_path, time) {
+run_go_program <- function(file_path, stepEM, timeNewton) {
   # Compile the Go program
   compile_result <- system("go build", intern = TRUE)
   if (length(compile_result) > 0) {
@@ -11,30 +21,41 @@ run_go_program <- function(file_path, time) {
   }
   
   # Run the Go program
-  run_result <- system(paste("./go", file_path, time), intern = TRUE)
+  run_result <- system(paste("./go", file_path, stepEM, timeNewton), intern = TRUE)
   if (length(run_result) > 0) {
     message("Runtime Output: ", run_result)
   }
 }
 
 ui <- fluidPage(
-  titlePanel(h1("GoMad Visualization", align = "center", style = "color: #2E86C1;")),
+    theme = bs_theme(version = 5, bootswatch = "lux"),
+  titlePanel(h1("GoMad: Molecular Dynamics Simulation", align = "center", style = "color: #2E86C1;")),
   sidebarLayout(
     sidebarPanel(
       h3("Input Options", style = "color: #34495E;"),
       fileInput("proteinFile", "Upload PDB File:", accept = c(".pdb")),
+      p("Accepted file types: .pdb.", style = "font-size: 12px; color: #7B7D7D;"),
       textInput("fileURL", "Or Enter the URL of the PDB File:"),
-      numericInput("simTime", "Simulation Time (fs):", value = 1, min = 0, step = 0.1),
-      actionButton("runGoCode", "Run MD Simulation", class = "btn btn-primary"),
+      actionButton("inputProteinVisu", "Input Protein", class = "btn btn-primary"),
       hr(),
-      p("Accepted file types: .pdb.", style = "font-size: 12px; color: #7B7D7D;")
+      h4("Simulation Parameters", style = "color: #34495E;"),
+      numericInput("emStep", "Energy Minimization Steps:", value = 10, min = 2, step = 1),
+      numericInput("simTime", "Simulation Time (fs):", value = 10, min = 2, step = 1),
+      actionButton("runGoCode", "Run MD Simulation", class = "btn btn-primary")
     ),
     mainPanel(
+        hr(),
+      h3("Input Protein Structure", style = "color: #34495E;"),
+      NGLVieweROutput("inputProtein", height = "500px"),
+      hr(),
       h3("RMSD Result", style = "color: #34495E;"),
       plotOutput("outputPlot", height = "300px"),
       hr(),
-      h3("Structure Visualization", style = "color: #34495E;"),
-      NGLVieweROutput("nglViewer", height = "500px"),
+      h3("Final Protein Structure", style = "color: #34495E;"),
+      NGLVieweROutput("finalStructure", height = "500px"),
+      hr(),
+      h3("Superimposed Structure", style = "color: #34495E;"),
+      NGLVieweROutput("superimposedStructure", height = "500px"),
       hr(),
       p("The above plot shows the RMSD of the protein over simulation time, and the structure is visualized using NGLVieweR.",
         style = "font-size: 12px; color: #7B7D7D;")
@@ -45,6 +66,29 @@ ui <- fluidPage(
  
 # creat the server
 server <- function(input, output) {
+    
+    # Input protein visualization
+    observeEvent(input$inputProteinVisu, {
+        file_path <- NULL
+        if (!is.null(input$proteinFile)) {
+            file_path <- input$proteinFile$datapath
+        } else if (input$fileURL != "") {
+            tempFile <- tempfile(fileext = ".pdb")
+            download.file(input$fileURL, tempFile, mode = "wb")
+            file_path <- tempFile
+        }
+        req(file_path)
+        
+        output$inputProtein <- renderNGLVieweR({
+            NGLVieweR(file_path) %>%
+                addRepresentation("cartoon", param = list(color = "blue")) %>%
+                setQuality("high") %>%
+                stageParameters(backgroundColor = "white", zoomSpeed = 1)
+        })
+        
+    })
+
+  # Running MD
   observeEvent(input$runGoCode, {
     withProgress(message = "MD Simulation", value = 0, {
       incProgress(0.1, detail = "Initializing...")
@@ -58,18 +102,34 @@ server <- function(input, output) {
         download.file(input$fileURL, tempFile, mode = "wb")
         file_path <- tempFile
       }
-      req(file_path)  
+      req(file_path)
       
-      time <- input$simTime
-      if (is.null(time) || time <= 0) {
+      # Render the input structural visualization in Shiny
+      output$inputProtein <- renderNGLVieweR({
+          NGLVieweR(file_path) %>%
+              addRepresentation("cartoon", param = list(color = "blue")) %>%
+              setQuality("high") %>%
+              stageParameters(backgroundColor = "white", zoomSpeed = 1)
+      })
+      
+      stepEM <- input$emStep
+      if (is.null(stepEM) || stepEM <= 0) {
+          showNotification("Please provide a valid energy minimization steps (positive number).", type = "error")
+          return()
+      }
+      
+      timeNewton <- input$simTime
+      if (is.null(timeNewton) || timeNewton <= 0) {
         showNotification("Please provide a valid simulation time (positive number).", type = "error")
         return()
       }
+     
       
       incProgress(0.4, detail = "Running Go simulation...")
       
+      
       Sys.sleep(2)  
-      run_go_program(file_path, time)
+      run_go_program(file_path, stepEM, timeNewton)
       
       incProgress(0.7, detail = "Loading RMSD data...")
       rmsd_data <- tryCatch({
@@ -104,13 +164,21 @@ server <- function(input, output) {
       output$outputPlot <- renderPlot({
         rmsd_plot
       })
-      print(file_path)
-      # Render the structural visualization in Shiny
-      output$nglViewer <- renderNGLVieweR({
-        NGLVieweR("result/output.pdb") %>%
-              addRepresentation("cartoon", param = list(color = "blue")) %>%
-              addStructure(file_path) %>%
+      
+      # Render the final protein structural visualization in Shiny
+      output$finalStructure <- renderNGLVieweR({
+          NGLVieweR("result/output.pdb") %>%
               addRepresentation("cartoon", param = list(color = "orange")) %>%
+              setQuality("high") %>%
+              stageParameters(backgroundColor = "white", zoomSpeed = 1)
+      })
+      
+      # Render the superimposed structural visualization in Shiny
+      output$superimposedStructure <- renderNGLVieweR({
+        NGLVieweR("result/output.pdb") %>%
+              addRepresentation("cartoon", param = list(color = "orange")) %>%
+              addStructure(file_path) %>%
+              addRepresentation("cartoon", param = list(color = "blue")) %>%
               setSuperpose(
                   reference = 1, 
                   sele_reference = ":A", 
