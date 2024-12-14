@@ -1869,15 +1869,17 @@ func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error
 }
 
 // convert
-
+// Convert the unit of float64 into five decimal places
 func ConvertFloat(n float64) float64 {
 	return math.Round(n*math.Pow10(5)) / math.Pow10(5)
 }
 
+// Convert the unit of float64s in the TriTuple into five decimal places
 func ConvertTriTuple(tri TriTuple) TriTuple {
 	return TriTuple{x: ConvertFloat(tri.x), y: ConvertFloat(tri.y), z: ConvertFloat(tri.z)}
 }
 
+// Convert the unit of float64 in the protein into five decimal places
 func ConvertProtein(p Protein) Protein {
 	for i := range p.Residue {
 		temp := ConvertResidue(*p.Residue[i])
@@ -1887,6 +1889,7 @@ func ConvertProtein(p Protein) Protein {
 	return p
 }
 
+// Convert the unit of float64 in residue into five decimal places
 func ConvertResidue(r Residue) Residue {
 	for i := range r.Atoms {
 		temp := ConvertAtom(*r.Atoms[i])
@@ -1896,6 +1899,7 @@ func ConvertResidue(r Residue) Residue {
 	return r
 }
 
+// Convert the unit of float64 in atom into five decimal places
 func ConvertAtom(a Atom) Atom {
 	a.force = ConvertTriTuple(a.force)
 	a.position = ConvertTriTuple(a.position)
