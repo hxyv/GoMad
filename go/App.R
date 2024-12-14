@@ -3,11 +3,13 @@
 if (!require("shiny")) install.packages("shiny")
 if (!require("ggplot2")) install.packages("ggplot2")
 if (!require("NGLVieweR")) install.packages("NGLVieweR")
+if (!require("bslib")) install.packages("bslib")
 
 # Load library
 library(shiny)
 library(ggplot2)
 library(NGLVieweR)
+library(bslib)
 
 # Define reusable function for compiling and running the Go program
 run_go_program <- function(file_path, stepEM, timeNewton) {
