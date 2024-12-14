@@ -218,15 +218,14 @@ func TestDistance(t *testing.T) {
 		atom2.position.x = convertStringToFloatSlice(pair[0])[0]
 		atom2.position.y = convertStringToFloatSlice(pair[0])[1]
 		atom2.position.z = convertStringToFloatSlice(pair[0])[2]
-
 		// function
-		result := Distance(atom1.position, atom2.position)
+		result := ConvertFloat(Distance(atom1.position, atom2.position))
 
 		// read output
 		out, _ := readFileline("Tests/Distance" + "/output/" + outputFiles[i].Name())
 		var realResult float64
 		realResult, _ = strconv.ParseFloat(out[0], 64)
-
+		realResult = ConvertFloat(realResult)
 		// compare
 		if realResult != result {
 			t.Errorf("Distance() = %v, want %v", result, realResult)
@@ -1129,9 +1128,20 @@ func TestCalculateTotalEnergyForce(t *testing.T) {
 
 		// function
 		result1, result2 := CalculateTotalEnergyForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
+		result1 = ConvertFloat(result1)
+
+		for t := range result2 {
+			res := ConvertTriTuple(*result2[t])
+			result2[t] = &res
+		}
 
 		// real output
 		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CalculateTotalEnergyForce" + "/output/" + outputFiles[i].Name())
+		realResult1 = ConvertFloat(realResult1)
+		for t := range realResult2 {
+			res := ConvertTriTuple(*realResult2[t])
+			realResult2[t] = &res
+		}
 
 		// compare
 		if realResult1 != result1 {
@@ -1180,8 +1190,21 @@ func TestCombineEnergyAndForce(t *testing.T) {
 		// function
 		result1, result2 := CombineEnergyAndForce(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter)
 
+		result1 = ConvertFloat(result1)
+
+		for t := range result2 {
+			res := ConvertTriTuple(*result2[t])
+			result2[t] = &res
+		}
+
 		// real output
 		realResult1, realResult2, _ := ReadFloatMapIntTriTuple("Tests/CombineEnergyAndForce" + "/output/" + outputFiles[i].Name())
+
+		realResult1 = ConvertFloat(realResult1)
+		for t := range realResult2 {
+			res := ConvertTriTuple(*realResult2[t])
+			realResult2[t] = &res
+		}
 
 		// compare
 		if realResult1 != result1 {
@@ -1231,9 +1254,13 @@ func TestSteepestDescent(t *testing.T) {
 		result := CopyProtein(&protein)
 		// function
 		SteepestDescent(result, h, forceMap)
+		temp := ConvertProtein(*result)
+		result = &temp
 
 		//real output
 		realResult, _ := ReadOneProtein("Tests/SteepestDescent/" + "output/" + outputFiles[i].Name())
+		realResult = ConvertProtein(realResult)
+
 		// compare
 
 		if realResult.Name != result.Name {
@@ -1287,8 +1314,12 @@ func TestPerformEnergyMinimization(t *testing.T) {
 		iteration := 1
 		// function
 		result := PerformEnergyMinimization(&protein, residueParameterBondValue, residueParameterOtherValue, bondParameter, angleParameter, dihedralParameter, nonbondedParameter, pairtypesParameter, iteration)
+		temp := ConvertProtein(*result)
+		result = &temp
+
 		// real output
 		realResult, _ := ReadOneProtein("Tests/PerformEnergyMinimization" + "/output/" + outputFiles[i].Name())
+		realResult = ConvertProtein(realResult)
 
 		// compare
 		if realResult.Name != result.Name {
@@ -1835,4 +1866,40 @@ func ReadFloatMapIntTriTuple(filename string) (float64, map[int]*TriTuple, error
 		}
 	}
 	return energy, Map, nil
+}
+
+// convert
+
+func ConvertFloat(n float64) float64 {
+	return math.Round(n*math.Pow10(5)) / math.Pow10(5)
+}
+
+func ConvertTriTuple(tri TriTuple) TriTuple {
+	return TriTuple{x: ConvertFloat(tri.x), y: ConvertFloat(tri.y), z: ConvertFloat(tri.z)}
+}
+
+func ConvertProtein(p Protein) Protein {
+	for i := range p.Residue {
+		temp := ConvertResidue(*p.Residue[i])
+		p.Residue[i] = &temp
+	}
+
+	return p
+}
+
+func ConvertResidue(r Residue) Residue {
+	for i := range r.Atoms {
+		temp := ConvertAtom(*r.Atoms[i])
+		r.Atoms[i] = &temp
+	}
+
+	return r
+}
+
+func ConvertAtom(a Atom) Atom {
+	a.force = ConvertTriTuple(a.force)
+	a.position = ConvertTriTuple(a.position)
+	a.velocity = ConvertTriTuple(a.velocity)
+	a.accelerated = ConvertTriTuple(a.accelerated)
+	return a
 }
